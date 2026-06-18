@@ -1,5 +1,34 @@
 """Schema Agent — drift detection, migration generation, schema linting, lineage."""
 
+
+def execute(task: str, context: dict) -> dict:
+    """Main entry point — called by orchestrator."""
+    task_lower = task.lower()
+    if "drift" in task_lower:
+        return detect_drift(
+            context.get("source_columns", []),
+            context.get("target_columns", []),
+        )
+    if "migration" in task_lower or "migrate" in task_lower:
+        return generate_migration(
+            context.get("source_columns", []),
+            context.get("target_columns", []),
+            context.get("table", "target_table"),
+        )
+    if "lint" in task_lower:
+        return lint_schema(
+            context.get("columns", []),
+            context.get("conventions"),
+        )
+    if "lineage" in task_lower or "trace" in task_lower:
+        return lineage(
+            context.get("table", ""),
+            context.get("columns", []),
+            context.get("transformations", []),
+        )
+    return detect_drift(context.get("source_columns", []), context.get("target_columns", []))
+
+
 def detect_drift(source_columns: list[dict], target_columns: list[dict]) -> dict:
     """Compare two column schemas and report drift.
 

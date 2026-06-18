@@ -131,7 +131,10 @@ def mcp_server(transport, port):
     click.echo(f"Starting DataForge MCP server ({transport})...", err=True)
     if transport == "sse":
         click.echo(f"Listening on http://0.0.0.0:{port}", err=True)
-    mcp.run(transport=transport, port=port)
+    kwargs = {}
+    if transport == "sse":
+        kwargs["port"] = port
+    mcp.run(transport=transport, **kwargs)
 
 
 @cli.command()

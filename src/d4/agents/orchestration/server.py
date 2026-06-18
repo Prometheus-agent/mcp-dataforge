@@ -2,6 +2,36 @@
 
 from datetime import datetime, timedelta
 
+
+def execute(task: str, context: dict) -> dict:
+    """Main entry point — called by orchestrator."""
+    task_lower = task.lower()
+    if "create" in task_lower or "generate" in task_lower:
+        return create_dag(
+            context.get("dag_id", "default_dag"),
+            context.get("description", ""),
+            context.get("schedule"),
+            context.get("tasks", []),
+        )
+    if "retry" in task_lower:
+        return manage_retry(
+            context.get("dag_id", "default_dag"),
+            context.get("task_id", ""),
+            context.get("action", "retry"),
+            context.get("max_retries", 3),
+        )
+    if "depend" in task_lower or "resolve" in task_lower:
+        return resolve_deps(context.get("dag_id", "default_dag"))
+    if "backfill" in task_lower:
+        return backfill(
+            context.get("dag_id", "default_dag"),
+            context.get("start_date", ""),
+            context.get("end_date", ""),
+            context.get("dry_run", True),
+        )
+    return create_dag(context.get("dag_id", "default_dag"), tasks=context.get("tasks", []))
+
+
 _STORE: dict = {
     "dags": {},
     "runs": [],

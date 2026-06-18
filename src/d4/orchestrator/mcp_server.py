@@ -48,6 +48,30 @@ def get_pipeline_status(pipeline_id: str) -> dict:
     return _get_orchestrator().get_pipeline_status(pipeline_id)
 
 
+@mcp.tool()
+def execute_task(task: str, context: dict | None = None) -> dict:
+    """Route a data engineering task to specialist agents, execute their tools sequentially passing context between them, and return results."""
+    return _get_orchestrator().execute_task(task, context)
+
+
+@mcp.tool()
+def execute_custom_pipeline(pipeline: list[dict], initial_context: dict | None = None) -> dict:
+    """Run a custom multi-agent pipeline where you specify each step. Each step: {"agent":"dq|pipeline|schema|catalog|observability|orchestration", "task":"...", "context":{...}}. Results pass between steps sequentially."""
+    return _get_orchestrator().execute_custom_pipeline(pipeline, initial_context)
+
+
+@mcp.tool()
+def execute_parallel(steps: list[dict]) -> dict:
+    """Run multiple agent steps in PARALLEL. Each step: {"agent":"dq|pipeline|...", "task":"...", "context":{...}}. Use for independent tasks like profiling multiple tables simultaneously. Returns merged results from all agents."""
+    return _get_orchestrator().execute_parallel(steps)
+
+
+@mcp.tool()
+def execute_mixed_pipeline(stages: list[dict], initial_context: dict | None = None) -> dict:
+    """Run a multi-stage pipeline mixing sequential and parallel phases. Stage types: {"type":"single","agent":"...","task":"..."}, {"type":"sequential","steps":[...]}, {"type":"parallel","steps":[...]}. Context flows between stages automatically. Use for complex workflows like 'profile multiple tables in parallel, then run schema detection sequentially.'"""
+    return _get_orchestrator().execute_mixed_pipeline(stages, initial_context)
+
+
 def run_stdio():
     """Run the MCP server on stdio transport (for Claude Code integration)."""
     mcp.run(transport="stdio")

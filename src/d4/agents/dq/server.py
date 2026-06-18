@@ -1,5 +1,70 @@
 """Data Quality Agent — profile, detect anomalies, validate rules."""
+import os
 from typing import Optional
+
+
+def execute(task: str, context: dict) -> dict:
+    """Main entry point — called by orchestrator. Routes to the right DQ tool."""
+    task_lower = task.lower()
+    table = context.get("table", "target_table")
+    conn_str = context.get("connection", os.getenv("DATAFORGE_DB", ":memory:"))
+
+    try:
+        import duckdb
+        conn = duckdb.connect(conn_str)
+    except ImportError:
+        return {"error": "duckdb not available", "task": task}
+
+    try:
+        # Ensure the table exists if it's in-memory
+        if conn_str == ":memory:":
+            _ensure_test_data(conn, table)
+
+        if "profile" in task_lower:
+            columns = context.get("columns")
+            sample = context.get("sample_size")
+            return profile_data(conn, table, columns, sample)
+
+        if "anomaly" in task_lower or "anomalies" in task_lower:
+            return detect_anomalies(
+                conn, table,
+                time_column=context.get("time_column", "dt"),
+                metric_column=context.get("metric_column", "val"),
+                threshold=context.get("threshold", 3.0),
+            )
+
+        if "validate" in task_lower or "rule" in task_lower:
+            rules = context.get("rules", [{"type": "not_null", "column": "email"}])
+            return validate_rules(conn, table, rules)
+
+        # Default: profile
+        return profile_data(conn, table)
+    finally:
+        if conn_str == ":memory:":
+            conn.close()
+
+
+def _ensure_test_data(conn, table: str) -> None:
+    """Create test data in memory if table doesn't exist."""
+    existing = conn.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name=?", [table]
+    ).fetchone()
+    if existing:
+        return
+    conn.execute(f"""
+        CREATE TABLE {table} AS SELECT * FROM (VALUES
+            (1, 'alice@email.com', 30, 'active'),
+            (2, 'bob@email.com', 25, 'active'),
+            (3, NULL, 35, 'active'),
+            (4, 'dave@email.com', -5, 'inactive'),
+        ) AS t(id, email, age, status)
+    """)
+    conn.execute(f"""
+        CREATE TABLE {table}_metrics AS SELECT * FROM (VALUES
+            ('2024-01-01', 100.0), ('2024-01-02', 102.0),
+            ('2024-01-03', 98.0),  ('2024-01-04', 500.0)
+        ) AS t(dt, val)
+    """)
 
 
 def profile_data(

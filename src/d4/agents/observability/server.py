@@ -1,5 +1,26 @@
 """Observability Agent — pipeline health, alerts, cost analysis, optimization."""
 
+
+def execute(task: str, context: dict) -> dict:
+    """Main entry point — called by orchestrator."""
+    task_lower = task.lower()
+    if "health" in task_lower:
+        return get_pipeline_health(context.get("pipeline", "default"))
+    if "alert" in task_lower:
+        return alert_summary(
+            context.get("severity", "all"),
+            context.get("hours", 24),
+        )
+    if "cost" in task_lower:
+        return cost_analysis(
+            context.get("provider", "all"),
+            context.get("timeframe", "monthly"),
+        )
+    if "optimize" in task_lower or "suggest" in task_lower:
+        return suggest_optimizations(context.get("pipeline", "default"))
+    return get_pipeline_health(context.get("pipeline", "default"))
+
+
 _STORE: dict = {
     "pipelines": {},
     "alerts": [],

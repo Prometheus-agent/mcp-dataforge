@@ -1,0 +1,47 @@
+agents:
+  catalog:
+    capabilities:
+    - catalog
+    - discovery
+    - documentation
+    - tagging
+    command: python -m d4.agents.catalog.server
+    transport: stdio
+  dq:
+    capabilities:
+    - data_quality
+    - profiling
+    - validation
+    command: python -m d4.agents.dq.server
+    transport: stdio
+  observability:
+    capabilities:
+    - observability
+    - monitoring
+    - alerts
+    - cost
+    command: python -m d4.agents.observability.server
+    transport: stdio
+  orchestration:
+    capabilities:
+    - orchestration
+    - dag
+    - scheduling
+    - backfill
+    command: python -m d4.agents.orchestration.server
+    transport: stdio
+  pipeline:
+    capabilities:
+    - sql
+    command: python -m d4.agents.pipeline.server
+    transport: stdio
+  schema:
+    capabilities:
+    - schema
+    - drift
+    - migration
+    - lineage
+    command: python -m d4.agents.schema.server
+    transport: stdio
+project: my-data-platform
+version: '1.0'

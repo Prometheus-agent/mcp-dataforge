@@ -1,5 +1,34 @@
 """Catalog Agent -- data discovery, documentation, impact analysis, tagging."""
 
+
+def execute(task: str, context: dict) -> dict:
+    """Main entry point — called by orchestrator."""
+    task_lower = task.lower()
+    if "search" in task_lower or "find" in task_lower:
+        return search(
+            context.get("query", task.replace("search", "").replace("find", "").strip()),
+            context.get("scope", "all"),
+        )
+    if "describe" in task_lower or "document" in task_lower or "info" in task_lower:
+        return describe(
+            context.get("table", "target_table"),
+            context.get("include_columns", True),
+        )
+    if "impact" in task_lower or "change" in task_lower:
+        return impact_analysis(
+            context.get("table", "target_table"),
+            context.get("changes", []),
+        )
+    if "tag" in task_lower:
+        return tag(
+            context.get("entity_type", "table"),
+            context.get("entity_name", context.get("table", "target_table")),
+            context.get("tags", []),
+            context.get("action", "add"),
+        )
+    return describe(context.get("table", "target_table"))
+
+
 _CATALOG: dict[str, dict] = {
     "tables": {},
     "tags": {},

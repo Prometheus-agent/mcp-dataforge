@@ -2,6 +2,26 @@ import sqlparse
 from typing import Optional
 
 
+def execute(task: str, context: dict) -> dict:
+    """Main entry point — called by orchestrator. Routes to the right pipeline tool."""
+    task_lower = task.lower()
+    if "generate" in task_lower or "create" in task_lower:
+        source = context.get("source", context.get("source_table", "source_table"))
+        target = context.get("target", context.get("target_table", "target_table"))
+        transforms = context.get("transformations")
+        return generate_pipeline(source, target, transforms)
+    if "debug" in task_lower:
+        sql = context.get("sql", "")
+        return debug_sql(sql) if sql else {"error": "No SQL provided"}
+    if "explain" in task_lower or "analyze" in task_lower:
+        sql = context.get("sql", "")
+        return explain_plan(sql) if sql else {"error": "No SQL provided"}
+    tables = [w for w in task_lower.split() if w.isalnum() and len(w) > 2]
+    source = tables[-2] if len(tables) >= 2 else "source"
+    target = tables[-1] if tables else "target"
+    return generate_pipeline(source, target)
+
+
 def generate_pipeline(
     source_table: str,
     target_table: str,
