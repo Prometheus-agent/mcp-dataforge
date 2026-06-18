@@ -149,6 +149,13 @@ def web(host, port):
 
 
 @cli.command()
+def chat():
+    """Enter interactive chat mode with the orchestrator."""
+    from d4.cli.chat import chat_loop
+    chat_loop()
+
+
+@cli.command()
 def mcp():
     """Print MCP server config for Claude Code integration."""
     config = {
