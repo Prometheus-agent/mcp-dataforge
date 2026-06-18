@@ -25,6 +25,8 @@ export default function Home() {
   const [selectedAgent, setSelectedAgent] = useState<AgentInfo | null>(null);
   const [expandedPipeline, setExpandedPipeline] = useState<string | null>(null);
   const [dark, setDark] = useState(false);
+  const [live, setLive] = useState(true);
+  const [selectedPipelineDetail, setSelectedPipelineDetail] = useState<any>(null);
 
   useEffect(() => {
     const stored = localStorage.getItem("dataforge-dark");
@@ -52,6 +54,26 @@ export default function Home() {
 
   useEffect(() => { loadData(); const i = setInterval(loadData, 5000); return () => clearInterval(i); }, [loadData]);
 
+  useEffect(() => {
+    const source = new EventSource("/api/pipelines/stream");
+    source.onmessage = (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        setPipelines(data);
+      } catch {}
+    };
+    source.onerror = () => setLive(false);
+    return () => source.close();
+  }, []);
+
+  async function showPipelineDetail(pipelineId: string) {
+    try {
+      const r = await fetch(`/api/pipelines/${pipelineId}/results`);
+      const data = await r.json();
+      setSelectedPipelineDetail(data);
+    } catch {}
+  }
+
   const stats = {
     total: pipelines.length,
     completed: pipelines.filter(p => p.status === "completed").length,
@@ -69,6 +91,7 @@ export default function Home() {
               className={`text-sm font-medium capitalize ${tab === t ? "text-blue-600 dark:text-blue-400" : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"}`}>{t}</button>
           ))}
           <div className="ml-auto flex items-center gap-3 text-xs text-slate-400 dark:text-slate-500">
+            <span className={`w-2 h-2 rounded-full ${live ? 'bg-green-500' : 'bg-red-500'}`} title={live ? 'Live' : 'Disconnected'} />
             <button onClick={() => setDark(d => !d)} className="text-lg leading-none hover:opacity-80 transition-opacity" aria-label="Toggle dark mode">
               {dark ? "☀️" : "🌙"}
             </button>
@@ -103,7 +126,7 @@ export default function Home() {
           <div className="space-y-2 mb-10">
             {pipelines.length === 0
               ? <EmptyState msg="No pipelines yet. Run a task from Claude Code!" />
-              : pipelines.slice(-5).reverse().map(p => <PipelineRowSmall key={p.id} p={p} />)}
+              : pipelines.slice(-5).reverse().map(p => <PipelineRowSmall key={p.id} p={p} onResults={showPipelineDetail} />)}
           </div>
 
           <h2 className="text-base font-semibold mb-4 dark:text-slate-100">Agents</h2>
@@ -134,6 +157,10 @@ export default function Home() {
                         ))}
                       </div>
                     </div>
+                    <button onClick={(e) => { e.stopPropagation(); showPipelineDetail(p.id); setExpandedPipeline(p.id); }}
+                      className="text-xs text-blue-600 dark:text-blue-400 hover:underline shrink-0">
+                      Results
+                    </button>
                     <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">{p.id.slice(0,12)}</span>
                     <svg className={`w-4 h-4 text-slate-400 shrink-0 transition-transform ${expandedPipeline === p.id ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -143,6 +170,25 @@ export default function Home() {
                     <div className="mt-2 mb-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-4">
                       <h4 className="text-sm font-semibold mb-3 dark:text-slate-100">Pipeline DAG</h4>
                       <div className="h-64 w-full"><DAGView plan={p.plan || []} /></div>
+                      {selectedPipelineDetail && selectedPipelineDetail.pipeline_id === p.id && (
+                        <div className="mt-4">
+                          <h5 className="text-sm font-semibold mb-2 dark:text-slate-100">Agent Results</h5>
+                          <div className="space-y-2">
+                            {selectedPipelineDetail.agent_results?.map((ar: any, i: number) => (
+                              <div key={i} className="flex items-center gap-3 bg-slate-50 dark:bg-slate-900 rounded-lg p-3 text-sm">
+                                <span className="text-lg">
+                                  {ar.status === 'success' ? '✅' : '❌'}
+                                </span>
+                                <span className="font-medium capitalize">{ar.agent}</span>
+                                <span className="text-slate-500 text-xs">{ar.step_task || ar.status}</span>
+                                {ar.result_summary && (
+                                  <pre className="ml-auto text-[10px] text-slate-400">{JSON.stringify(ar.result_summary)}</pre>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -194,7 +240,7 @@ function EmptyState({ msg }: { msg: string }) {
   return <div className="text-center py-16 text-slate-400 dark:text-slate-500"><p>{msg}</p></div>;
 }
 
-function PipelineRowSmall({ p }: { p: PipelineSummary }) {
+function PipelineRowSmall({ p, onResults }: { p: PipelineSummary; onResults?: (id: string) => void }) {
   return (
     <div className="flex items-center gap-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3">
       <StatusBadge status={p.status} />
@@ -206,6 +252,12 @@ function PipelineRowSmall({ p }: { p: PipelineSummary }) {
           ))}
         </div>
       </div>
+      {onResults && (
+        <button onClick={(e) => { e.stopPropagation(); onResults(p.id); }}
+          className="text-xs text-blue-600 dark:text-blue-400 hover:underline shrink-0">
+          Results
+        </button>
+      )}
       <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">{p.id.slice(0,12)}</span>
     </div>
   );
