@@ -138,6 +138,17 @@ def mcp_server(transport, port):
 
 
 @cli.command()
+@click.option("--host", default="0.0.0.0", help="Host to bind to")
+@click.option("--port", default=8080, help="Port to listen on")
+def web(host, port):
+    """Start the DataForge web dashboard."""
+    from d4.web.server import run
+    click.echo(f"DataForge Dashboard: http://localhost:{port}")
+    click.echo(f"API: http://localhost:{port}/api/agents")
+    run(host=host, port=port)
+
+
+@cli.command()
 def mcp():
     """Print MCP server config for Claude Code integration."""
     config = {
