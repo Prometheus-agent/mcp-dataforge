@@ -67,6 +67,10 @@ def create_default_config() -> DataForgeConfig:
                 command="python -m d4.agents.schema.server",
                 capabilities=["schema", "drift", "migration", "lineage"],
             ),
+            "catalog": AgentConfig(
+                command="python -m d4.agents.catalog.server",
+                capabilities=["catalog", "discovery", "documentation", "tagging"],
+            ),
         },
     )
 

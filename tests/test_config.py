@@ -98,3 +98,8 @@ class TestCreateDefaultConfig:
         cfg = create_default_config()
         assert "schema" in cfg.agents
         assert "drift" in cfg.agents["schema"].capabilities
+
+    def test_default_has_catalog_agent(self):
+        cfg = create_default_config()
+        assert "catalog" in cfg.agents
+        assert "discovery" in cfg.agents["catalog"].capabilities
