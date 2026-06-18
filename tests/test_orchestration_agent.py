@@ -1,6 +1,7 @@
 import pytest
 from d4.agents.orchestration.server import (
     create_dag, manage_retry, resolve_deps, backfill,
+    list_dags, pause_dag, unpause_dag, visualize_dag, get_dag_runs,
 )
 
 
@@ -9,6 +10,89 @@ def reset_store():
     import d4.agents.orchestration.server as srv
     srv._STORE["dags"].clear()
     srv._STORE["runs"].clear()
+
+
+@pytest.fixture
+def seeded_dag():
+    tasks = [
+        {"id": "extract", "command": "python extract.py", "depends_on": []},
+        {"id": "transform", "command": "python transform.py", "depends_on": ["extract"]},
+        {"id": "load", "command": "python load.py", "depends_on": ["transform"]},
+    ]
+    return create_dag("etl_pipeline", description="ETL Pipeline", schedule="@daily", tasks=tasks)
+
+
+class TestListDags:
+    def test_empty(self):
+        result = list_dags()
+        assert result["total_dags"] == 0
+        assert result["dags"] == []
+
+    def test_with_dags(self, seeded_dag):
+        result = list_dags()
+        assert result["total_dags"] == 1
+        assert result["dags"][0]["dag_id"] == "etl_pipeline"
+        assert result["dags"][0]["task_count"] == 3
+
+    def test_multiple_dags(self):
+        create_dag("dag_a")
+        create_dag("dag_b")
+        result = list_dags()
+        assert result["total_dags"] == 2
+
+
+class TestPauseUnpause:
+    def test_pause_dag(self, seeded_dag):
+        result = pause_dag("etl_pipeline")
+        assert result["status"] == "success"
+        assert result["is_active"] is False
+
+    def test_unpause_dag(self, seeded_dag):
+        pause_dag("etl_pipeline")
+        result = unpause_dag("etl_pipeline")
+        assert result["status"] == "success"
+        assert result["is_active"] is True
+
+    def test_pause_nonexistent(self):
+        result = pause_dag("ghost")
+        assert result["status"] == "error"
+
+
+class TestVisualizeDag:
+    def test_generates_mermaid(self, seeded_dag):
+        result = visualize_dag("etl_pipeline")
+        assert result["task_count"] == 3
+        assert result["mermaid"].startswith("graph TD")
+        assert "extract" in result["mermaid"]
+        assert "transform" in result["mermaid"]
+        assert "extract --> transform" in result["mermaid"]
+
+    def test_empty_dag(self):
+        create_dag("empty")
+        result = visualize_dag("empty")
+        assert result["task_count"] == 0
+
+    def test_nonexistent(self):
+        result = visualize_dag("ghost")
+        assert result["status"] == "error"
+
+
+class TestGetDagRuns:
+    def test_no_runs(self, seeded_dag):
+        result = get_dag_runs("etl_pipeline")
+        assert result["total_runs"] == 0
+
+    def test_with_backfill_runs(self):
+        tasks = [{"id": "t1", "depends_on": []}]
+        create_dag("test", tasks=tasks, schedule="@daily")
+        backfill("test", "2026-01-01", "2026-01-03", dry_run=False)
+        result = get_dag_runs("test")
+        assert result["total_runs"] == 3
+        assert result["intervals_covered"] == 3
+
+    def test_nonexistent(self):
+        result = get_dag_runs("ghost")
+        assert result["status"] == "error"
 
 
 class TestCreateDag:

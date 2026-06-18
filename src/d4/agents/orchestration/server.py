@@ -29,6 +29,16 @@ def execute(task: str, context: dict) -> dict:
             context.get("end_date", ""),
             context.get("dry_run", True),
         )
+    if "list" in task_lower or "all" in task_lower:
+        return list_dags()
+    if "pause" in task_lower:
+        return pause_dag(context.get("dag_id", "default_dag"))
+    if "unpause" in task_lower or "resume" in task_lower:
+        return unpause_dag(context.get("dag_id", "default_dag"))
+    if "visualize" in task_lower or "graph" in task_lower or "mermaid" in task_lower:
+        return visualize_dag(context.get("dag_id", "default_dag"))
+    if "run" in task_lower or "status" in task_lower:
+        return get_dag_runs(context.get("dag_id", "default_dag"))
     return create_dag(context.get("dag_id", "default_dag"), tasks=context.get("tasks", []))
 
 
@@ -268,6 +278,102 @@ def resolve_deps(dag_id: str) -> dict:
         "critical_path_length": max_depth,
         "can_parallelize": any(len(level) > 1 for level in levels),
         "dependency_tree": dependency_tree,
+    }
+
+
+def list_dags() -> dict:
+    """List all DAGs with their status, task count, and schedule."""
+    dags = []
+    for dag_id, dag in _STORE["dags"].items():
+        dags.append({
+            "dag_id": dag_id,
+            "description": dag.get("description", ""),
+            "schedule": dag.get("schedule"),
+            "task_count": len(dag.get("tasks", [])),
+            "is_active": dag.get("is_active", True),
+            "created_at": dag.get("created_at"),
+        })
+    return {
+        "total_dags": len(dags),
+        "dags": dags,
+    }
+
+
+def pause_dag(dag_id: str) -> dict:
+    """Pause a DAG — stops new runs from being scheduled."""
+    dag = _STORE["dags"].get(dag_id)
+    if not dag:
+        return {"status": "error", "message": f"DAG '{dag_id}' not found"}
+    dag["is_active"] = False
+    return {"status": "success", "dag_id": dag_id, "is_active": False}
+
+
+def unpause_dag(dag_id: str) -> dict:
+    """Unpause a DAG — resumes scheduling."""
+    dag = _STORE["dags"].get(dag_id)
+    if not dag:
+        return {"status": "error", "message": f"DAG '{dag_id}' not found"}
+    dag["is_active"] = True
+    return {"status": "success", "dag_id": dag_id, "is_active": True}
+
+
+def visualize_dag(dag_id: str) -> dict:
+    """Generate a Mermaid.js graph representation of the DAG."""
+    dag = _STORE["dags"].get(dag_id)
+    if not dag:
+        return {"status": "error", "message": f"DAG '{dag_id}' not found"}
+
+    tasks = dag.get("tasks", [])
+    if not tasks:
+        return {"dag_id": dag_id, "mermaid": f"graph TD\n    {dag_id}[{dag_id}]", "task_count": 0}
+
+    lines = ["graph TD"]
+    for t in tasks:
+        tid = t["id"]
+        label = t.get("command", tid).split("/")[-1].split(".")[0]
+        lines.append(f"    {tid}[\"{label}\"]")
+        for dep in t.get("depends_on", []):
+            lines.append(f"    {dep} --> {tid}")
+
+    return {
+        "dag_id": dag_id,
+        "task_count": len(tasks),
+        "mermaid": "\n".join(lines),
+    }
+
+
+def get_dag_runs(dag_id: str) -> dict:
+    """Get the execution history for a DAG."""
+    dag = _STORE["dags"].get(dag_id)
+    if not dag:
+        return {"status": "error", "message": f"DAG '{dag_id}' not found"}
+
+    runs = [r for r in _STORE["runs"] if r["dag_id"] == dag_id]
+    task_ids = {t["id"] for t in dag.get("tasks", [])}
+
+    # Group by interval for summary
+    intervals = {}
+    for r in runs:
+        interval = r.get("interval", "unknown")
+        if interval not in intervals:
+            intervals[interval] = {"total": 0, "queued": 0}
+        intervals[interval]["total"] += 1
+        if r.get("status") == "queued":
+            intervals[interval]["queued"] += 1
+
+    return {
+        "dag_id": dag_id,
+        "total_runs": len(runs),
+        "tasks": len(task_ids),
+        "intervals_covered": len(intervals),
+        "intervals": [
+            {"date": k, "tasks": v["total"], "queued": v["queued"]}
+            for k, v in sorted(intervals.items())
+        ],
+        "recent_runs": [
+            {"task_id": r["task_id"], "interval": r.get("interval"), "status": r.get("status")}
+            for r in runs[-5:]
+        ],
     }
 
 
