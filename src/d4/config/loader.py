@@ -59,6 +59,10 @@ def create_default_config() -> DataForgeConfig:
                 command="python -m d4.agents.pipeline.server",
                 capabilities=["sql"],
             ),
+            "dq": AgentConfig(
+                command="python -m d4.agents.dq.server",
+                capabilities=["data_quality", "profiling", "validation"],
+            ),
         },
     )
 

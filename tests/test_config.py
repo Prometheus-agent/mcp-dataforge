@@ -88,3 +88,8 @@ class TestCreateDefaultConfig:
         cfg = create_default_config()
         assert "pipeline" in cfg.agents
         assert cfg.agents["pipeline"].command == "python -m d4.agents.pipeline.server"
+
+    def test_default_has_dq_agent(self):
+        cfg = create_default_config()
+        assert "dq" in cfg.agents
+        assert "data_quality" in cfg.agents["dq"].capabilities
