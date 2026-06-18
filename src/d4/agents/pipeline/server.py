@@ -16,6 +16,12 @@ def execute(task: str, context: dict) -> dict:
     if "explain" in task_lower or "analyze" in task_lower:
         sql = context.get("sql", "")
         return explain_plan(sql) if sql else {"error": "No SQL provided"}
+    if "spark" in task_lower:
+        return run_spark(
+            context.get("job_name", task.replace("spark", "").strip()),
+            context.get("script", "job.py"),
+            context.get("config"),
+        )
     tables = [w for w in task_lower.split() if w.isalnum() and len(w) > 2]
     source = tables[-2] if len(tables) >= 2 else "source"
     target = tables[-1] if tables else "target"
@@ -90,6 +96,44 @@ def debug_sql(sql: str) -> dict:
         "analysis": {
             "statement_count": len(parsed),
             "clauses": clauses,
+        },
+    }
+
+
+def run_spark(job_name: str, script_path: str, config: dict | None = None) -> dict:
+    """Generate a PySpark job configuration and plan.
+
+    This tool doesn't execute Spark directly — it generates the job config,
+    argument list, and monitoring commands that the user can run.
+    """
+    if config is None:
+        config = {}
+
+    spark_config = {
+        "spark.master": config.get("master", "yarn"),
+        "spark.executor.memory": config.get("executor_memory", "4g"),
+        "spark.executor.instances": config.get("executor_instances", 4),
+        "spark.driver.memory": config.get("driver_memory", "2g"),
+        "spark.sql.shuffle.partitions": config.get("shuffle_partitions", 200),
+    }
+
+    submit_command = [
+        "spark-submit",
+        f"--name", job_name,
+    ]
+    for k, v in spark_config.items():
+        submit_command.extend([f"--conf", f"{k}={v}"])
+    submit_command.append(script_path)
+
+    return {
+        "job_name": job_name,
+        "script": script_path,
+        "spark_config": spark_config,
+        "submit_command": " \\\n  ".join(submit_command),
+        "monitoring": f"spark.yarn.ui.port={config.get('ui_port', 8088)}",
+        "estimated_resources": {
+            "total_memory_gb": spark_config["spark.executor.instances"] * int(spark_config["spark.executor.memory"][:-1]),
+            "total_cores": spark_config["spark.executor.instances"] * 4,
         },
     }
 

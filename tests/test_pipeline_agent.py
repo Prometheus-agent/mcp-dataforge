@@ -2,6 +2,7 @@ from d4.agents.pipeline.server import (
     generate_pipeline,
     debug_sql,
     explain_plan,
+    run_spark,
 )
 
 
@@ -49,3 +50,16 @@ class TestExplainPlan:
         assert result["query_type"] == "SELECT"
         assert "orders" in result["table"]
         assert len(result["operations"]) > 0
+
+
+class TestRunSpark:
+    def test_generates_spark_job(self):
+        result = run_spark("etl_job", "transform.py")
+        assert result["job_name"] == "etl_job"
+        assert "spark-submit" in result["submit_command"]
+        assert "spark.executor.memory" in result["spark_config"]
+
+    def test_custom_config(self):
+        result = run_spark("test", "test.py", {"executor_memory": "8g", "executor_instances": 8})
+        assert result["spark_config"]["spark.executor.memory"] == "8g"
+        assert result["estimated_resources"]["total_memory_gb"] == 64

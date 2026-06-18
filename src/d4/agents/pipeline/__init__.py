@@ -3,6 +3,7 @@ from d4.agents.pipeline.server import (
     generate_pipeline,
     debug_sql,
     explain_plan,
+    run_spark,
 )
 
 __all__ = [
@@ -10,4 +11,5 @@ __all__ = [
     "generate_pipeline",
     "debug_sql",
     "explain_plan",
+    "run_spark",
 ]

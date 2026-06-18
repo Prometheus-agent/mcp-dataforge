@@ -2,6 +2,8 @@
 import uuid
 import importlib
 from typing import Optional
+from collections import defaultdict
+from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from d4.registry.agent_registry import AgentRegistry
 from d4.models.core import AgentStep
@@ -13,9 +15,40 @@ class Orchestrator:
     def __init__(self, registry: Optional[AgentRegistry] = None):
         self.registry = registry or AgentRegistry()
         self.pipelines: dict[str, dict] = {}
+        self.failure_counts: dict[str, int] = defaultdict(int)
+        self.circuit_open_until: dict[str, datetime] = {}
 
     def _call_agent_tool(self, agent_name: str, task: str, context: Optional[dict] = None) -> dict:
+        """Call an agent tool with circuit breaker protection."""
+        # Check circuit breaker
+        if agent_name in self.circuit_open_until:
+            if datetime.now() < self.circuit_open_until[agent_name]:
+                return {"status": "error", "agent": agent_name, "error": f"Circuit breaker open for '{agent_name}' (cooldown until {self.circuit_open_until[agent_name].strftime('%H:%M:%S')})"}
+            else:
+                # Circuit has cooled down, reset
+                del self.circuit_open_until[agent_name]
+                self.failure_counts[agent_name] = 0
+
+        result = self._call_agent_tool_raw(agent_name, task, context)
+
+        if result["status"] == "error":
+            self.failure_counts[agent_name] += 1
+            failures = self.failure_counts[agent_name]
+            if failures >= 3:
+                cooldown = timedelta(seconds=min(30 * (failures - 2), 300))
+                self.circuit_open_until[agent_name] = datetime.now() + cooldown
+                result["circuit_breaker"] = f"Opened for {int(cooldown.total_seconds())}s after {failures} failures"
+        else:
+            self.failure_counts[agent_name] = max(0, self.failure_counts[agent_name] - 1)
+
+        return result
+
+    def _call_agent_tool_raw(self, agent_name: str, task: str, context: Optional[dict] = None) -> dict:
         """Dynamically import an agent module and call its execute() function."""
+        # Max recursion depth check
+        if context and context.get("_depth", 0) > 5:
+            return {"status": "error", "agent": agent_name, "error": "Max recursion depth exceeded (5)"}
+
         agent = self.registry.get(agent_name)
         if not agent:
             return {"status": "error", "agent": agent_name, "error": f"Agent '{agent_name}' not found"}

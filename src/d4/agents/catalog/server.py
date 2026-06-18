@@ -26,6 +26,15 @@ def execute(task: str, context: dict) -> dict:
             context.get("tags", []),
             context.get("action", "add"),
         )
+    if "sync" in task_lower or "import" in task_lower:
+        try:
+            import duckdb
+            conn = duckdb.connect(context.get("connection", ":memory:"))
+            result = sync_from_db(conn, context.get("schema", "public"), context.get("include_columns", True))
+            conn.close()
+            return result
+        except ImportError:
+            return {"error": "duckdb not available"}
     return describe(context.get("table", "target_table"))
 
 
@@ -198,6 +207,74 @@ def impact_analysis(table: str, changes: list[dict]) -> dict:
         "high_severity": high_count,
         "medium_severity": medium_count,
         "impacts": impacts,
+    }
+
+
+def sync_from_db(
+    conn,
+    schema: str = "public",
+    include_columns: bool = True,
+) -> dict:
+    """Sync table metadata from a DuckDB/Postgres connection into the catalog.
+
+    This allows users to import their actual database schema into the catalog
+    for discovery and documentation.
+    """
+    tables_added = 0
+    columns_added = 0
+
+    # Get all tables
+    try:
+        tables = conn.execute(f"""
+            SELECT table_name
+            FROM information_schema.tables
+            WHERE table_schema = '{schema}'
+        """).fetchall()
+    except Exception:
+        tables = []
+
+    if not tables:
+        # Fallback for DuckDB/SQLite
+        try:
+            tables = conn.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()
+        except Exception:
+            tables = []
+
+    if not tables:
+        # Fallback: DuckDB SHOW TABLES
+        try:
+            tables = conn.execute("SHOW TABLES").fetchall()
+        except Exception:
+            tables = []
+
+    for row in tables:
+        table_name = row[0]
+        table_data = _ensure_table(table_name)
+        table_data["description"] = f"Imported from {schema}.{table_name}"
+
+        if include_columns:
+            try:
+                columns = conn.execute(f"DESCRIBE {table_name}").fetchall()
+                for col in columns:
+                    col_name = col[0]
+                    col_type = col[1] if len(col) > 1 else "unknown"
+                    table_data["columns"][col_name] = {
+                        "name": col_name,
+                        "type": col_type,
+                        "description": "",
+                        "nullable": True,
+                    }
+                    columns_added += 1
+            except Exception:
+                pass
+        tables_added += 1
+
+    return {
+        "status": "success",
+        "schema": schema,
+        "tables_added": tables_added,
+        "columns_added": columns_added,
+        "total_tables": len(_CATALOG["tables"]),
     }
 
 

@@ -1,5 +1,5 @@
 import pytest
-from d4.agents.catalog.server import search, describe, impact_analysis, tag
+from d4.agents.catalog.server import search, describe, impact_analysis, tag, sync_from_db
 
 
 # Reset catalog state before each test
@@ -129,3 +129,34 @@ class TestTag:
     def test_invalid_entity_type(self):
         result = tag("invalid", "x", ["y"])
         assert result["status"] == "error"
+
+
+class TestSyncFromDb:
+    def test_sync_from_duckdb(self):
+        import duckdb
+        conn = duckdb.connect(":memory:")
+        conn.execute("CREATE TABLE test_sync (id INTEGER, name VARCHAR)")
+        conn.execute("INSERT INTO test_sync VALUES (1, 'hello')")
+
+        result = sync_from_db(conn, include_columns=True)
+        assert result["tables_added"] >= 1
+        assert result["columns_added"] >= 2
+
+        info = describe("test_sync", include_columns=True)
+        assert info["column_count"] >= 2
+
+        # Clean up the catalog state for other tests
+        import d4.agents.catalog.server as cat
+        cat._CATALOG["tables"].clear()
+
+    def test_sync_no_columns(self):
+        import duckdb
+        conn = duckdb.connect(":memory:")
+        conn.execute("CREATE TABLE empty_t (x INTEGER)")
+
+        result = sync_from_db(conn, include_columns=False)
+        assert result["tables_added"] >= 1
+        assert result["columns_added"] == 0
+
+        import d4.agents.catalog.server as cat
+        cat._CATALOG["tables"].clear()
