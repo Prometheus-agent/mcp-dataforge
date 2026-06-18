@@ -1,0 +1,149 @@
+<h2>🔌 MCP-native Architecture</h2>
+<p class="subtitle">Setiap specialist agent adalah MCP Server</p>
+
+<div class="section">
+  <h3>🏗️ Arsitektur Baru</h3>
+  <div class="mockup" style="padding: 20px;">
+    <div style="text-align: center; margin-bottom: 12px; font-size: 13px; color: #999;">MCP Client (Claude Code, Cursor, Web UI, CLI)</div>
+    <div style="border: 2px dashed #60a5fa; border-radius: 12px; padding: 16px; margin-bottom: 20px;">
+      <div style="text-align: center; font-size: 12px; color: #60a5fa; margin-bottom: 10px;">⬆️⬇️ MCP Protocol (stdio / SSE)</div>
+      <div style="text-align: center; margin-bottom: 8px; font-size: 12px; color: #999;">Orchestrator MCP Server ("Router Agent")</div>
+      <div style="display: flex; gap: 6px; justify-content: center; flex-wrap: wrap;">
+        <span style="background: #0f172a; border: 1px solid #475569; padding: 6px 14px; border-radius: 8px; font-size: 12px;">🧠 intent_router</span>
+        <span style="background: #0f172a; border: 1px solid #475569; padding: 6px 14px; border-radius: 8px; font-size: 12px;">🔄 task_planner</span>
+        <span style="background: #0f172a; border: 1px solid #475569; padding: 6px 14px; border-radius: 8px; font-size: 12px;">🔗 agent_gateway</span>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px;">
+      <div style="border: 2px solid #1d4ed8; border-radius: 10px; padding: 12px; text-align: center; background: #1e293b;">
+        <div style="font-size: 24px;">🔧</div>
+        <div style="font-weight: 600; font-size: 13px;">Pipeline MCP</div>
+        <div style="font-size: 11px; color: #94a3b8;">Tools: generate_pipeline, debug_sql, run_spark, explain_plan</div>
+        <div style="background: #1d4ed8; color: white; font-size: 10px; padding: 2px 8px; border-radius: 10px; display: inline-block; margin-top: 6px;">MCP Server</div>
+      </div>
+      <div style="border: 2px solid #7c3aed; border-radius: 10px; padding: 12px; text-align: center; background: #1e293b;">
+        <div style="font-size: 24px;">✅</div>
+        <div style="font-weight: 600; font-size: 13px;">DQ MCP</div>
+        <div style="font-size: 11px; color: #94a3b8;">Tools: profile_data, detect_anomalies, validate_rules, compute_metrics</div>
+        <div style="background: #7c3aed; color: white; font-size: 10px; padding: 2px 8px; border-radius: 10px; display: inline-block; margin-top: 6px;">MCP Server</div>
+      </div>
+      <div style="border: 2px solid #059669; border-radius: 10px; padding: 12px; text-align: center; background: #1e293b;">
+        <div style="font-size: 24px;">📐</div>
+        <div style="font-weight: 600; font-size: 13px;">Schema MCP</div>
+        <div style="font-size: 11px; color: #94a3b8;">Tools: detect_drift, generate_migration, lint_schema, lineage</div>
+        <div style="background: #059669; color: white; font-size: 10px; padding: 2px 8px; border-radius: 10px; display: inline-block; margin-top: 6px;">MCP Server</div>
+      </div>
+    </div>
+
+    <div style="text-align: center; font-size: 12px; color: #999; margin: 8px 0;">+ 3 lagi (Orchestration, Catalog, Observability) — semuanya MCP Server</div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>💡 MCP Tool Definition Example</h3>
+  <div style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 14px; font-family: monospace; font-size: 13px; line-height: 1.7;">
+<span style="color: #6b7280;"># DQ MCP Server tools</span><br/>
+<br/>
+<span style="color: #f472b6;">@mcp.tool</span><br/>
+<span style="color: #f472b6;">async def</span> <span style="color: #60a5fa;">profile_data</span>(<br/>
+&emsp;table: <span style="color: #34d399;">str</span>,<br/>
+&emsp;columns: <span style="color: #34d399;">list[str]</span> | <span style="color: #fbbf24;">None</span> = <span style="color: #fbbf24;">None</span><br/>
+) → <span style="color: #34d399;">ProfileResult</span>:<br/>
+&emsp;<span style="color: #6b7280;">"""Profile a table: null rates, distributions, stats"""</span><br/>
+&emsp;...<br/>
+<br/>
+<span style="color: #f472b6;">@mcp.tool</span><br/>
+<span style="color: #f472b6;">async def</span> <span style="color: #60a5fa;">detect_anomalies</span>(<br/>
+&emsp;table: <span style="color: #34d399;">str</span>,<br/>
+&emsp;time_range: <span style="color: #34d399;">str</span>,<br/>
+&emsp;method: <span style="color: #34d399;">AnomalyMethod</span> = <span style="color: #34d399;">"zscore"</span><br/>
+) → <span style="color: #34d399;">AnomalyReport</span>:<br/>
+&emsp;<span style="color: #6b7280;">"""Detect anomalies in time-series data"""</span><br/>
+&emsp;...
+  </div>
+</div>
+
+<div class="section">
+  <h3>🧠 Orchestrator MCP — Router + Gateway</h3>
+  <p style="font-size: 13px;">Ini juga MCP Server, tapi dengan peran khusus sebagai "gateway":</p>
+  <ul>
+    <li><strong>Tool:</strong> <code>route_task(task_description, context)</code> — parse intent, panggil agent lain</li>
+    <li><strong>Tool:</strong> <code>multi_agent_plan(objective, agents)</code> — bikin execution plan multi-agent</li>
+    <li><strong>Tool:</strong> <code>get_capabilities()</code> — list semua agent yang available</li>
+  </ul>
+  <div style="background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 14px; margin-top: 12px;">
+    <div style="font-family: monospace; font-size: 13px; line-height: 1.8;">
+      <span style="color: #6b7280;"># Orchestrator → Agent communication via MCP too!</span><br/>
+      <span style="color: #60a5fa;">orchestrator</span>.<span style="color: #34d399;">call_tool</span>(<span style="color: #34d399;">"pipeline-mcp"</span>, <span style="color: #34d399;">"generate_pipeline"</span>, {<span style="color: #34d399;">"source": "orders", ...</span>})<br/>
+      → response → pass to <span style="color: #34d399;">"dq-mcp"</span> → <span style="color: #34d399;">"validate_rules"</span> → ...
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>✅ Keuntungan MCP-native</h3>
+  <div class="options" data-multiselect>
+    <div class="option" data-choice="std" onclick="toggleSelect(this)">
+      <div class="letter">1</div>
+      <div class="content">
+        <h3>Protocol Standard</h3>
+        <p>Nggak perlu desain protocol sendiri. transport, auth, error handling udah diurus MCP spec.</p>
+      </div>
+    </div>
+    <div class="option" data-choice="interop" onclick="toggleSelect(this)">
+      <div class="letter">2</div>
+      <div class="content">
+        <h3>Interoperability</h3>
+        <p>Agent kita bisa dipake dari Claude Code langsung. Agent dari pihak ketiga juga bisa integrasi.</p>
+      </div>
+    </div>
+    <div class="option" data-choice="plugin" onclick="toggleSelect(this)">
+      <div class="letter">3</div>
+      <div class="content">
+        <h3>Plugin = MCP Server</h3>
+        <p>Buat agent plugin baru = buat MCP server baru. Nggak perlu belajar framework-specific API.</p>
+      </div>
+    </div>
+    <div class="option" data-choice="ecosystem" onclick="toggleSelect(this)">
+      <div class="letter">4</div>
+      <div class="content">
+        <h3>Ecosystem Leverage</h3>
+        <p>Bisa integrasi dengan MCP server yang udah ada: filesystem, github, database, web scraping.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>⚡ vs Framework-specific</h3>
+  <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
+    <tr style="border-bottom: 1px solid #334155;">
+      <th style="padding: 8px; text-align: left;">Aspek</th>
+      <th style="padding: 8px; text-align: left;">MCP-native</th>
+      <th style="padding: 8px; text-align: left;">Framework-specific</th>
+    </tr>
+    <tr style="border-bottom: 1px solid #1e293b;">
+      <td style="padding: 8px;">Belajar bikin agent</td>
+      <td style="padding: 8px; color: #34d399;">Tahu MCP = bisa bikin</td>
+      <td style="padding: 8px; color: #f87171;">Harus belajar API baru</td>
+    </tr>
+    <tr style="border-bottom: 1px solid #1e293b;">
+      <td style="padding: 8px;">Ecosystem</td>
+      <td style="padding: 8px; color: #34d399;">Bisa pake ribuan MCP server</td>
+      <td style="padding: 8px; color: #f87171;">Cuma plugin sendiri</td>
+    </tr>
+    <tr style="border-bottom: 1px solid #1e293b;">
+      <td style="padding: 8px;">Client compatibility</td>
+      <td style="padding: 8px; color: #34d399;">Claude, Cursor, VS Code, dll</td>
+      <td style="padding: 8px; color: #f87171;">Cuma web UI sendiri</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px;">Bahasa</td>
+      <td style="padding: 8px; color: #34d399;">Any (protocol-based)</td>
+      <td style="padding: 8px; color: #f87171;">Terikat bahasa framework</td>
+    </tr>
+  </table>
+</div>
+
+<p style="color: #94a3b8; font-size: 13px; margin-top: 20px;">Gimana? MCP-native approach ini yang kamu maksud?</p>

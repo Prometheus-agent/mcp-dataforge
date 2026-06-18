@@ -1,0 +1,77 @@
+<h2>🛡️ Security, Error Handling & Observability</h2>
+<p class="subtitle" style="margin-bottom: 20px;">Section 3: Resilience & safety across all layers</p>
+
+<div class="section">
+  <h3>⚠️ Error Handling Strategy</h3>
+  <div style="display: grid; gap: 12px;">
+    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px;">
+      <div style="font-weight: 600; font-size: 14px;">Agent-level Retry</div>
+      <div style="font-size: 13px; color: #64748b;">MCP tool call gagal? Agent auto-retry 3× dengan exponential backoff. Kalau masih gagal, laporkan ke Orchestrator.</div>
+      <div style="background: #f1f5f9; border-radius: 6px; margin-top: 8px; padding: 8px; font-family: monospace; font-size: 12px;">retry(max=3, backoff=1.5, max_delay=30s)</div>
+    </div>
+    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px;">
+      <div style="font-weight: 600; font-size: 14px;">Graceful Degradation</div>
+      <div style="font-size: 13px; color: #64748b;">Kalau Schema Agent down, Pipeline Agent tetap bisa jalan dengan reduced capability. Orchestrator manage fallback routing.</div>
+    </div>
+    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px;">
+      <div style="font-weight: 600; font-size: 14px;">Circuit Breaker</div>
+      <div style="font-size: 13px; color: #64748b;">Agent yang repeatedly gagal auto-dimatiin sementara (30s cooldown). Orchestrator cari alternatif atau notify user.</div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>🔒 Security Layers</h3>
+  <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px;">
+      <div style="font-size: 13px; font-weight: 600;">Tool-level RBAC</div>
+      <div style="font-size: 12px; color: #64748b;">Setiap MCP tool punya permission level. <code>read</code> (safe) vs <code>write</code> (butuh approval).</div>
+    </div>
+    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px;">
+      <div style="font-size: 13px; font-weight: 600;">Dry-run Mode</div>
+      <div style="font-size: 12px; color: #64748b;">Semua destructive operation bisa dry-run dulu. Output: "akan melakukan X, Y, Z. Approve?"</div>
+    </div>
+    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px;">
+      <div style="font-size: 13px; font-weight: 600;">Audit Trail</div>
+      <div style="font-size: 12px; color: #64748b;">Semua tool call, decision, approval tercatat: siapa, apa, kapan, hasilnya.</div>
+    </div>
+    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px;">
+      <div style="font-size: 13px; font-weight: 600;">Credential Isolation</div>
+      <div style="font-size: 12px; color: #64748b;">Tiap agent punya credential scope sendiri. Pipeline Agent gak bisa akses DQ Agent's secrets.</div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>📊 Observability</h3>
+  <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px;">
+    <div style="font-weight: 600; font-size: 14px; margin-bottom: 8px;">Orchestrator exposes MCP tools for observability:</div>
+    <div style="background: #f1f5f9; border-radius: 6px; padding: 12px; font-family: monospace; font-size: 12px; line-height: 2;">
+      <span style="color: #2563eb;">get_pipeline_status</span>(pipeline_id) → current state, agent progress, errors<br/>
+      <span style="color: #2563eb;">get_agent_health</span>() → list all agents, uptime, last_seen, error_count<br/>
+      <span style="color: #2563eb;">get_session_logs</span>(session_id) → full audit trail of a session<br/>
+      <span style="color: #2563eb;">get_metrics</span>() → tool call count, avg latency, error rate, agent load
+    </div>
+  </div>
+  <p style="font-size: 13px; color: #64748b; margin-top: 10px;">
+    Integration dengan OpenTelemetry optional — bisa export traces ke Jaeger, Grafana, dll.
+  </p>
+</div>
+
+<div class="section">
+  <h3>📝 Session Management</h3>
+  <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; font-family: monospace; font-size: 13px; line-height: 1.8;">
+    <span style="color: #6b7280;"># Setiap task lifecycle punya session_id</span><br/>
+    session = Session.create(task=<span style="color: #10b981;">"Fix nulls in orders"</span>)<br/>
+    → <span style="color: #2563eb;">session_abc123</span><br/>
+    <br/>
+    <span style="color: #6b7280;"># Agent bisa resume context dari session sebelumnya</span><br/>
+    session.get_context() → {pipeline_result, schema_report, ...}<br/>
+    <br/>
+    <span style="color: #6b7280;"># User bisa cancel session, rollback changes</span><br/>
+    session.cancel()<br/>
+    session.rollback()  <span style="color: #6b7280;"># undo destructive operations where possible</span>
+  </div>
+</div>
+
+<p style="color: #94a3b8; font-size: 13px; margin-top: 20px;">Section 3 complete. Lanjut ke Section 4: Data Model & Configuration?</p>

@@ -47,7 +47,7 @@ class Capability(BaseModel):
 
 class AgentInfo(BaseModel):
     """Information about a registered agent."""
-    name: str = Field(min_length=4)
+    name: str = Field(min_length=1)
     command: str
     transport: str = "stdio"
     capabilities: list[str] = Field(default_factory=list)

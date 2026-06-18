@@ -1,0 +1,99 @@
+<h2>🧪 Testing Strategy & Roadmap</h2>
+<p class="subtitle" style="margin-bottom: 20px;">Section 7: Quality assurance and phased delivery plan</p>
+
+<div class="section">
+  <h3>Testing Strategy</h3>
+  <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px;">
+      <div style="font-weight: 600; font-size: 13px;">🔬 Unit</div>
+      <div style="font-size: 12px; color: #64748b;">Pytest untuk setiap agent logic, model validation, tool execution. Mock MCP transport.</div>
+    </div>
+    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px;">
+      <div style="font-weight: 600; font-size: 13px;">🔗 Integration</div>
+      <div style="font-size: 12px; color: #64748b;">Test agent-to-agent communication. Spin up 2+ agents, test routing, context passing, error handling.</div>
+    </div>
+    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px;">
+      <div style="font-weight: 600; font-size: 13px;">🧩 E2E</div>
+      <div style="font-size: 12px; color: #64748b;">Full pipeline: user request → orchestration → multi-agent → result. Use local test data (DuckDB/SQLite).</div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>📅 Phased Roadmap</h3>
+  <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 8px;">
+    <div style="background: #2563eb; color: white; border-radius: 10px; padding: 16px;">
+      <div style="display: flex; gap: 12px; align-items: flex-start;">
+        <span style="font-size: 24px;">🎯</span>
+        <div>
+          <div style="font-weight: 700; font-size: 14px;">Phase 1 — Core Foundation</div>
+          <div style="font-size: 12px; opacity: 0.9;">MVP: Orchestrator MCP server + 1 agent (Pipeline) + CLI + stdio transport</div>
+        </div>
+      </div>
+    </div>
+    <div style="border: 2px solid #7c3aed; border-radius: 10px; padding: 16px; background: #f5f3ff;">
+      <div style="display: flex; gap: 12px; align-items: flex-start;">
+        <span style="font-size: 24px;">🚀</span>
+        <div>
+          <div style="font-weight: 700; font-size: 14px; color: #4c1d95;">Phase 2 — Agent Expansion</div>
+          <div style="font-size: 12px; color: #6d28d9;">Add DQ + Schema agents. Implement A2A patterns: sequential, parallel, debate. SSE transport.</div>
+        </div>
+      </div>
+    </div>
+    <div style="border: 2px solid #059669; border-radius: 10px; padding: 16px; background: #f0fdf4;">
+      <div style="display: flex; gap: 12px; align-items: flex-start;">
+        <span style="font-size: 24px;">🌐</span>
+        <div>
+          <div style="font-weight: 700; font-size: 14px; color: #047857;">Phase 3 — Ecosystem</div>
+          <div style="font-size: 12px; color: #065f46;">Add Orchestration + Catalog + Observability agents. Docker deployment. Plugin API docs.</div>
+        </div>
+      </div>
+    </div>
+    <div style="border: 2px solid #d97706; border-radius: 10px; padding: 16px; background: #fffbeb;">
+      <div style="display: flex; gap: 12px; align-items: flex-start;">
+        <span style="font-size: 24px;">🏢</span>
+        <div>
+          <div style="font-weight: 700; font-size: 14px; color: #92400e;">Phase 4 — Enterprise</div>
+          <div style="font-size: 12px; color: #78350f;">RBAC, audit trail, SSO, team collaboration features, web UI.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Phase 1 — Detailed Scope</h3>
+  <p style="font-size: 13px; color: #64748b;">Ini yang akan kita mulai implementasi:</p>
+  <table style="width: 100%; font-size: 13px; border-collapse: collapse; margin-top: 8px;">
+    <tr style="border-bottom: 1px solid #e2e8f0;">
+      <th style="padding: 8px; text-align: left;">Component</th>
+      <th style="padding: 8px; text-align: left;">Scope</th>
+    </tr>
+    <tr style="border-bottom: 1px solid #f1f5f9;">
+      <td style="padding: 8px; font-weight: 500;">CLI</td>
+      <td style="padding: 8px; color: #64748b;">dataforge init | start | run | help</td>
+    </tr>
+    <tr style="border-bottom: 1px solid #f1f5f9;">
+      <td style="padding: 8px; font-weight: 500;">Orchestrator MCP</td>
+      <td style="padding: 8px; color: #64748b;">route_task, list_agents, get_pipeline_status</td>
+    </tr>
+    <tr style="border-bottom: 1px solid #f1f5f9;">
+      <td style="padding: 8px; font-weight: 500;">Pipeline Agent</td>
+      <td style="padding: 8px; color: #64748b;">generate_pipeline, debug_sql, explain_plan (SQL-focused first)</td>
+    </tr>
+    <tr style="border-bottom: 1px solid #f1f5f9;">
+      <td style="padding: 8px; font-weight: 500;">Transport</td>
+      <td style="padding: 8px; color: #64748b;">stdio (local only)</td>
+    </tr>
+    <tr style="border-bottom: 1px solid #f1f5f9;">
+      <td style="padding: 8px; font-weight: 500;">Config</td>
+      <td style="padding: 8px; color: #64748b;">YAML config, inline agent discovery</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px; font-weight: 500;">MCP Client</td>
+      <td style="padding: 8px; color: #64748b;">Claude Code MCP integration</td>
+    </tr>
+  </table>
+</div>
+
+<p style="color: #94a3b8; font-size: 13px; margin-top: 20px;">Section 7 complete — semua section udah. Siap untuk disusun jadi design doc?</p>

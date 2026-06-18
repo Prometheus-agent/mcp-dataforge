@@ -1,0 +1,106 @@
+<h2>🚀 Deployment & Packaging</h2>
+<p class="subtitle" style="margin-bottom: 20px;">Section 6: How to install, run, and distribute</p>
+
+<div class="section">
+  <h3>📦 Package Layout</h3>
+  <div style="display: flex; gap: 16px;">
+    <div style="flex: 2; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; font-family: monospace; font-size: 13px; line-height: 1.8;">
+      mcp-dataforge/<br/>
+      ├── src/d4/<br/>
+      │   ├── __init__.py<br/>
+      │   ├── cli/ &emsp;&emsp;&emsp;&emsp;&emsp;<span style="color: #6b7280;"># dataforge CLI entrypoint</span><br/>
+      │   ├── orchestrator/ &emsp;&emsp;<span style="color: #6b7280;"># MCP server: routing, planning, gateway</span><br/>
+      │   ├── agents/ &emsp;&emsp;&emsp;&emsp;<span style="color: #6b7280;"># built-in agents</span><br/>
+      │   │   ├── pipeline/<br/>
+      │   │   ├── dq/<br/>
+      │   │   ├── schema/<br/>
+      │   │   ├── orchestration/<br/>
+      │   │   ├── catalog/<br/>
+      │   │   └── observability/<br/>
+      │   ├── models/ &emsp;&emsp;&emsp;&emsp;<span style="color: #6b7280;"># Pydantic models</span><br/>
+      │   └── shared/ &emsp;&emsp;&emsp;&emsp;<span style="color: #6b7280;"># utils, config, logging</span><br/>
+      ├── pyproject.toml<br/>
+      └── README.md
+    </div>
+    <div style="flex: 1; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px;">
+      <div style="font-weight: 600; font-size: 13px; margin-bottom: 6px;">Distribution Plan</div>
+      <div style="font-size: 12px; color: #64748b; line-height: 1.8;">
+        <strong>1. PyPI</strong><br/>
+        <code>mcp-dataforge</code> — core<br/>
+        <code>d4-agent-pipeline</code><br/>
+        <code>d4-agent-dq</code><br/>
+        <code>d4-agent-schema</code><br/>
+        <br/>
+        <strong>2. Docker</strong><br/>
+        <code>dataforge/orchestrator</code><br/>
+        <code>dataforge/agent-pipeline</code><br/>
+        <br/>
+        <strong>3. Homebrew</strong><br/>
+        <code>brew install dataforge</code>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>🐳 Docker Deployment</h3>
+  <div style="background: #f1f5f9; border-radius: 10px; padding: 16px; font-family: monospace; font-size: 12px; line-height: 1.7;">
+    <span style="color: #6b7280;"># docker-compose.yml</span><br/>
+    services:<br/>
+    &emsp;orchestrator:<br/>
+    &emsp;&emsp;image: <span style="color: #10b981;">dataforge/orchestrator:latest</span><br/>
+    &emsp;&emsp;ports: [<span style="color: #10b981;">"8080:8080"</span>]<br/>
+    &emsp;&emsp;environment:<br/>
+    &emsp;&emsp;&emsp;AGENT_CONFIG: <span style="color: #10b981;">/config/agents.yaml</span><br/>
+    &emsp;<br/>
+    &emsp;agent-pipeline:<br/>
+    &emsp;&emsp;image: <span style="color: #10b981;">dataforge/agent-pipeline:latest</span><br/>
+    &emsp;&emsp;ports: [<span style="color: #10b981;">"9001:9001"</span>] <span style="color: #6b7280;"># SSE transport</span><br/>
+    &emsp;&emsp;environment:<br/>
+    &emsp;&emsp;&emsp;TRANSPORT: <span style="color: #10b981;">sse</span><br/>
+    &emsp;&emsp;&emsp;PORT: <span style="color: #10b981;">9001</span><br/>
+    &emsp;<br/>
+    &emsp;agent-dq: <span style="color: #6b7280;"># ...similar</span>
+  </div>
+</div>
+
+<div class="section">
+  <h3>🔌 MCP Client Integration</h3>
+  <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px;">
+    <p style="font-size: 13px; margin: 0 0 8px 0;">Contoh konfigurasi di Claude Code (<code>~/.claude/settings.json</code>):</p>
+    <div style="background: #f1f5f9; border-radius: 6px; padding: 10px; font-family: monospace; font-size: 12px; line-height: 1.7;">
+      {<br/>
+      &emsp;{<span style="color: #10b981;">"mcpServers"</span>: {<br/>
+      &emsp;&emsp;<span style="color: #10b981;">"dataforge"</span>: {<br/>
+      &emsp;&emsp;&emsp;<span style="color: #10b981;">"command"</span>: <span style="color: #10b981;">"dataforge"</span>,<br/>
+      &emsp;&emsp;&emsp;<span style="color: #10b981;">"args"</span>: [<span style="color: #10b981;">"mcp"</span>]<br/>
+      &emsp;&emsp;}<br/>
+      &emsp;}<br/>
+      }
+    </div>
+    <p style="font-size: 12px; color: #64748b; margin-top: 8px;">Satu entry → Orchestrator manage sisanya. Client cuma perlu satu MCP server.</p>
+  </div>
+</div>
+
+<div class="section">
+  <h3>🏠 Local Development Mode</h3>
+  <div style="display: flex; gap: 12px;">
+    <div style="flex: 1; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; text-align: center;">
+      <div style="font-size: 20px;">🖥️</div>
+      <div style="font-weight: 600; font-size: 13px;">stdio</div>
+      <div style="font-size: 12px; color: #64748b;">All agents as subprocess. Zero config.</div>
+    </div>
+    <div style="flex: 1; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; text-align: center;">
+      <div style="font-size: 20px;">⚡</div>
+      <div style="font-weight: 600; font-size: 13px;">Hot Reload</div>
+      <div style="font-size: 12px; color: #64748b;">Edit agent code, restart otomatis.</div>
+    </div>
+    <div style="flex: 1; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; text-align: center;">
+      <div style="font-size: 20px;">🔍</div>
+      <div style="font-weight: 600; font-size: 13px;">Debug Mode</div>
+      <div style="font-size: 12px; color: #64748b;">Verbose logging, step-by-step execution.</div>
+    </div>
+  </div>
+</div>
+
+<p style="color: #94a3b8; font-size: 13px; margin-top: 20px;">Section 6 complete. Lanjut ke Section 7: Testing & Roadmap?</p>

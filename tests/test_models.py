@@ -97,6 +97,6 @@ class TestAgentInfo:
         )
         assert agent.transport == "stdio"
 
-    def test_invalid_status(self):
+    def test_empty_name(self):
         with pytest.raises(ValidationError):
-            AgentInfo(name="bad", command="echo hi", capabilities=["x"])
+            AgentInfo(name="", command="echo hi", capabilities=["x"])

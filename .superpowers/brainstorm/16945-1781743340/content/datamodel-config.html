@@ -1,0 +1,99 @@
+<h2>📦 Data Model & Configuration</h2>
+<p class="subtitle" style="margin-bottom: 20px;">Section 4: Core types, schemas, and how to configure agents</p>
+
+<div class="section">
+  <h3>🏗️ Core Data Model (Pydantic)</h3>
+  <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; font-family: monospace; font-size: 12px; line-height: 1.8;">
+    <span style="color: #6b7280;"># === Core Models ===</span><br/>
+    <br/>
+    <span style="color: #2563eb;">class</span> <span style="font-weight: 600;">Task</span>:<br/>
+    &emsp;id: <span style="color: #64748b;">str</span><br/>
+    &emsp;description: <span style="color: #64748b;">str</span> <span style="color: #6b7280;"># "check null rates in orders table"</span><br/>
+    &emsp;context: <span style="color: #64748b;">dict</span> <span style="color: #6b7280;"># shared context across agents</span><br/>
+    &emsp;session_id: <span style="color: #64748b;">str</span><br/>
+    &emsp;agent_plan: <span style="color: #64748b;">list[AgentStep]</span> <span style="color: #6b7280;"># resolved plan</span><br/>
+    <br/>
+    <span style="color: #2563eb;">class</span> <span style="font-weight: 600;">AgentStep</span>:<br/>
+    &emsp;agent: <span style="color: #64748b;">str</span> <span style="color: #6b7280;"># "pipeline-agent"</span><br/>
+    &emsp;tool: <span style="color: #64748b;">str</span> <span style="color: #6b7280;"># "execute"</span><br/>
+    &emsp;params: <span style="color: #64748b;">dict</span><br/>
+    &emsp;depends_on: <span style="color: #64748b;">list[str]</span> <span style="color: #6b7280;"># step IDs that must complete first</span><br/>
+    &emsp;parallel: <span style="color: #64748b;">bool</span> <span style="color: #6b7280;"># can run in parallel?</span><br/>
+    <br/>
+    <span style="color: #2563eb;">class</span> <span style="font-weight: 600;">AgentResponse</span>:<br/>
+    &emsp;status: <span style="color: #64748b;">"success" | "error" | "pending_approval"</span><br/>
+    &emsp;summary: <span style="color: #64748b;">str</span><br/>
+    &emsp;confidence: <span style="color: #64748b;">float</span> <span style="color: #6b7280;"># 0-1</span><br/>
+    &emsp;artifacts: <span style="color: #64748b;">dict</span> <span style="color: #6b7280;"># output files, reports, etc.</span><br/>
+    &emsp;requires_approval: <span style="color: #64748b;">bool</span><br/>
+    &emsp;error: <span style="color: #64748b;">ErrorInfo | None</span><br/>
+    <br/>
+    <span style="color: #2563eb;">class</span> <span style="font-weight: 600;">Capability</span>:<br/>
+    &emsp;name: <span style="color: #64748b;">str</span> <span style="color: #6b7280;"># "data_quality.profiling"</span><br/>
+    &emsp;version: <span style="color: #64748b;">str</span><br/>
+    &emsp;tools: <span style="color: #64748b;">list[str]</span> <span style="color: #6b7280;"># tool names this agent provides</span>
+  </div>
+</div>
+
+<div class="section">
+  <h3>⚙️ Configuration</h3>
+  <div style="display: flex; gap: 16px;">
+    <div style="flex: 1; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px;">
+      <div style="font-weight: 600; font-size: 14px; margin-bottom: 8px;">📄 YAML Config</div>
+      <div style="background: #f1f5f9; border-radius: 6px; padding: 10px; font-family: monospace; font-size: 12px; line-height: 1.7;">
+        <span style="color: #6b7280;"># ~/.dataforge/config.yaml</span><br/>
+        <br/>
+        version: <span style="color: #10b981;">"1.0"</span><br/>
+        project: <span style="color: #10b981;">"my-data-platform"</span><br/>
+        <br/>
+        agents:<br/>
+        &emsp;pipeline:<br/>
+        &emsp;&emsp;command: <span style="color: #10b981;">"python -m d4.agents.pipeline"</span><br/>
+        &emsp;&emsp;transport: <span style="color: #10b981;">stdio</span><br/>
+        &emsp;&emsp;capabilities: [<span style="color: #10b981;">"sql"</span>, <span style="color: #10b981;">"spark"</span>, <span style="color: #10b981;">"dbt"</span>]<br/>
+        &emsp;dq:<br/>
+        &emsp;&emsp;command: <span style="color: #10b981;">"python -m d4.agents.dq"</span><br/>
+        &emsp;&emsp;transport: <span style="color: #10b981;">stdio</span><br/>
+        <br/>
+        integrations:<br/>
+        &emsp;warehouse: <span style="color: #10b981;">snowflake</span><br/>
+        &emsp;&emsp;target: <span style="color: #10b981;">prod</span>
+      </div>
+    </div>
+    <div style="flex: 1; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px;">
+      <div style="font-weight: 600; font-size: 14px; margin-bottom: 8px;">🔧 CLI</div>
+      <div style="background: #f1f5f9; border-radius: 6px; padding: 10px; font-family: monospace; font-size: 12px; line-height: 1.7;">
+        <span style="color: #6b7280;"># Init project</span><br/>
+        <span style="color: #10b981;">dataforge init</span> <span style="color: #64748b;"># creates config.yaml</span><br/>
+        <br/>
+        <span style="color: #6b7280;"># Start all agents</span><br/>
+        <span style="color: #10b981;">dataforge start</span><br/>
+        <br/>
+        <span style="color: #6b7280;"># List available agents</span><br/>
+        <span style="color: #10b981;">dataforge agent list</span><br/>
+        <br/>
+        <span style="color: #6b7280;"># Install plugin</span><br/>
+        <span style="color: #10b981;">dataforge plugin install d4-agent-schema</span><br/>
+        <br/>
+        <span style="color: #6b7280;"># Run one-off task</span><br/>
+        <span style="color: #10b981;">dataforge run</span> <span style="color: #64748b;">"profile customers table"</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>📁 Project Structure</h3>
+  <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; font-family: monospace; font-size: 13px; line-height: 1.8;">
+    .dataforge/<br/>
+    ├── config.yaml &emsp;&emsp;&emsp;<span style="color: #6b7280;"># project config</span><br/>
+    ├── agents/ &emsp;&emsp;&emsp;&emsp;&emsp;<span style="color: #6b7280;"># custom agents</span><br/>
+    │   └── my-custom-agent/<br/>
+    │       ├── agent.py<br/>
+    │       └── pyproject.toml<br/>
+    ├── logs/ &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;<span style="color: #6b7280;"># session logs & audit trail</span><br/>
+    └── state/ &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;<span style="color: #6b7280;"># session checkpoints</span>
+  </div>
+</div>
+
+<p style="color: #94a3b8; font-size: 13px; margin-top: 20px;">Section 4 complete. Lanjut ke Section 5: Agent Implementation Detail?</p>

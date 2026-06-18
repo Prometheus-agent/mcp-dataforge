@@ -1,0 +1,73 @@
+<h2>🏷️ Naming & Core Orchestrator</h2>
+<p class="subtitle">Section 1: Identitas + Jantung Framework</p>
+
+<div class="section">
+  <h3>Nama Framework: <code>mcp-dataforge</code> (atau namamu sendiri?)</h3>
+  <p style="font-size: 13px;">Nama sementara "DataForge" — Forge = tempa data mentah jadi berkualitas. Tapi kalau ada preferensi lain, ganti aja.</p>
+</div>
+
+<div class="section">
+  <h3>🧠 Orchestrator MCP Server — Detail</h3>
+  <p style="font-size: 13px;">Ini adalah entry point utama. Satu MCP Server dengan tools berikut:</p>
+
+  <div style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 14px; font-family: monospace; font-size: 12px; line-height: 1.8;">
+<span style="color: #6b7280;"># Tools yang di-expose ke client (Claude Code, dll)</span><br/>
+<br/>
+<span style="color: #f472b6;">@mcp.tool</span><br/>
+<span style="color: #f472b6;">async def</span> <span style="color: #60a5fa;">route_task</span>(<br/>
+&emsp;task: <span style="color: #34d399;">str</span>, &emsp;&emsp;&emsp;&emsp;<span style="color: #6b7280;"># "check null rates in orders table and fix"</span><br/>
+&emsp;context: <span style="color: #34d399;">dict</span> | <span style="color: #fbbf24;">None</span> = <span style="color: #fbbf24;">None</span><br/>
+) → <span style="color: #34d399;">TaskResult</span>: <br/>
+&emsp;<span style="color: #6b7280;">"""Parse intent, plan multi-agent execution, orchestrate & return result"""</span><br/>
+<br/>
+<span style="color: #f472b6;">@mcp.tool</span><br/>
+<span style="color: #f472b6;">async def</span> <span style="color: #60a5fa;">list_agents</span>() → <span style="color: #34d399;">list[AgentInfo]</span>:<br/>
+&emsp;<span style="color: #6b7280;">"""Discover all available MCP agent servers and their capabilities"""</span><br/>
+<br/>
+<span style="color: #f472b6;">@mcp.tool</span><br/>
+<span style="color: #f472b6;">async def</span> <span style="color: #60a5fa;">get_pipeline_status</span>(pipeline_id: <span style="color: #34d399;">str</span>) → <span style="color: #34d399;">PipelineStatus</span>:<br/>
+&emsp;<span style="color: #6b7280;">"""Track progress of running multi-agent pipelines"""</span>
+  </div>
+</div>
+
+<div class="section">
+  <h3>🔧 Agent Discovery — Cara Orchestrator Cari Agent Lain</h3>
+  <p style="font-size: 13px;">Dua mekanisme discover agent MCP server:</p>
+
+  <div style="display: flex; gap: 16px; margin: 12px 0;">
+    <div style="flex: 1; background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 14px;">
+      <div style="font-weight: 600; font-size: 14px; color: #60a5fa;">📄 Config-based</div>
+      <div style="background: #0f172a; border-radius: 6px; padding: 10px; margin-top: 8px; font-family: monospace; font-size: 12px;">
+        <span style="color: #f472b6;">agents</span> = {<br/>
+        &emsp;<span style="color: #34d399;">"pipeline"</span>: {<span style="color: #34d399;">"command"</span>: <span style="color: #34d399;">"python -m d4.agents.pipeline"</span>}</span><br/>
+        &emsp;<span style="color: #34d399;">"dq"</span>: {<span style="color: #34d399;">"command"</span>: <span style="color: #34d399;">"python -m d4.agents.dq"</span>}<br/>
+        }
+      </div>
+    </div>
+    <div style="flex: 1; background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 14px;">
+      <div style="font-weight: 600; font-size: 14px; color: #a78bfa;">🔎 Auto-discover</div>
+      <p style="font-size: 12px;">Scan entry_points atau port range. Ideal untuk plugin pihak ketiga. <code>pip install d4-dq-agent</code> → auto detected.</p>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>📦 Packaging</h3>
+  <div style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 14px; font-family: monospace; font-size: 13px; line-height: 1.7;">
+pip install mcp-dataforge &emsp;<span style="color: #6b7280;"># Core orchestrator + built-in agents</span><br/>
+pip install d4-agent-schema &emsp;<span style="color: #6b7280;"># Schema agent plugin (optional)</span><br/>
+pip install d4-agent-dq &emsp;&emsp;<span style="color: #6b7280;"># DQ agent plugin (optional)</span>
+  </div>
+</div>
+
+<div class="section">
+  <h3>✅ Arsitektur ini udah OK?</h3>
+  <ul>
+    <li>Nama framework: <strong>mcp-dataforge</strong> — atau ada preferensi lain?</li>
+    <li>Orchestrator MCP Server sebagai entry point tunggal</li>
+    <li>Agent discovery via config & auto-discover</li>
+    <li>Packaging terpisah: core vs plugin</li>
+  </ul>
+</div>
+
+<p style="color: #94a3b8; font-size: 13px; margin-top: 20px;">Apakah section ini sudah sesuai? Kalau ada yang mau diubah, langsung aja. Kalau OK, kita lanjut ke detail Agent-to-Agent Communication.</p>

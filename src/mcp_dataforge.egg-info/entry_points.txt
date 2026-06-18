@@ -1,0 +1,2 @@
+[console_scripts]
+dataforge = d4.cli.main:cli

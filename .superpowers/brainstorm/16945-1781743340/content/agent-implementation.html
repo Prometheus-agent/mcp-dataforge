@@ -1,0 +1,139 @@
+<h2>🧩 Agent Implementation Detail</h2>
+<p class="subtitle" style="margin-bottom: 20px;">Section 5: What each agent does internally — tools & responsibilities</p>
+
+<div class="section">
+  <h3>🔧 Pipeline Agent</h3>
+  <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px;">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+      <div>
+        <div style="font-weight: 600; font-size: 13px; margin-bottom: 6px;">MCP Tools</div>
+        <ul style="font-size: 12px; color: #64748b; margin: 0; padding-left: 16px; line-height: 1.8;">
+          <li><code>generate_pipeline</code> — buat pipeline dari desc</li>
+          <li><code>debug_sql</code> — explain & optimize SQL</li>
+          <li><code>run_spark</code> — execute & monitor PySpark job</li>
+          <li><code>explain_plan</code> — visual query plan</li>
+          <li><code>lint_pipeline</code> — check best practices</li>
+        </ul>
+      </div>
+      <div>
+        <div style="font-weight: 600; font-size: 13px; margin-bottom: 6px;">Integrations</div>
+        <ul style="font-size: 12px; color: #64748b; margin: 0; padding-left: 16px; line-height: 1.8;">
+          <li>SQL: Snowflake, BigQuery, Redshift, Postgres</li>
+          <li>Compute: Spark, Pandas, DuckDB</li>
+          <li>Transform: dbt core</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>✅ Data Quality Agent</h3>
+  <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px;">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+      <div>
+        <div style="font-weight: 600; font-size: 13px; margin-bottom: 6px;">MCP Tools</div>
+        <ul style="font-size: 12px; color: #64748b; margin: 0; padding-left: 16px; line-height: 1.8;">
+          <li><code>profile_data</code> — null rate, distribution, stats</li>
+          <li><code>detect_anomalies</code> — time-series outlier detection</li>
+          <li><code>validate_rules</code> — run custom quality rules</li>
+          <li><code>compute_metrics</code> — freshness, completeness, accuracy</li>
+        </ul>
+      </div>
+      <div>
+        <div style="font-weight: 600; font-size: 13px; margin-bottom: 6px;">Approach</div>
+        <div style="font-size: 12px; color: #64748b;">
+          Sampling-based profiling untuk large tables. Configurable threshold. Bisa auto-generate dbt tests dari profiling result.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>📐 Schema Agent</h3>
+  <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px;">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+      <div>
+        <div style="font-weight: 600; font-size: 13px; margin-bottom: 6px;">MCP Tools</div>
+        <ul style="font-size: 12px; color: #64748b; margin: 0; padding-left: 16px; line-height: 1.8;">
+          <li><code>detect_drift</code> — compare schema across environments</li>
+          <li><code>generate_migration</code> — auto SQL migration script</li>
+          <li><code>lint_schema</code> — naming conventions, data types</li>
+          <li><code>lineage</code> — column-level lineage tracing</li>
+        </ul>
+      </div>
+      <div>
+        <div style="font-weight: 600; font-size: 13px; margin-bottom: 6px;">Capabilities</div>
+        <div style="font-size: 12px; color: #64748b;">
+          Support schema contracts. Detect breaking changes before deploy. Auto-suggest column types.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>⚡ Orchestration Agent</h3>
+  <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px;">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+      <div>
+        <div style="font-weight: 600; font-size: 13px; margin-bottom: 6px;">MCP Tools</div>
+        <ul style="font-size: 12px; color: #64748b; margin: 0; padding-left: 16px; line-height: 1.8;">
+          <li><code>create_dag</code> — generate Airflow/Dagster DAG</li>
+          <li><code>manage_retry</code> — configure retry logic</li>
+          <li><code>resolve_deps</code> — dependency resolution & scheduling</li>
+          <li><code>backfill</code> — manage historical backfill runs</li>
+        </ul>
+      </div>
+      <div>
+        <div style="font-weight: 600; font-size: 13px; margin-bottom: 6px;">Integrations</div>
+        <div style="font-size: 12px; color: #64748b;">Airflow, Dagster, Prefect, Cron. Read existing DAGs and suggest improvements.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>📚 Catalog Agent</h3>
+  <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px;">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+      <div>
+        <div style="font-weight: 600; font-size: 13px; margin-bottom: 6px;">MCP Tools</div>
+        <ul style="font-size: 12px; color: #64748b; margin: 0; padding-left: 16px; line-height: 1.8;">
+          <li><code>search</code> — find tables, columns, pipelines</li>
+          <li><code>describe</code> — auto-generate documentation</li>
+          <li><code>impact_analysis</code> — "who uses this table?"</li>
+          <li><code>tag</code> — manage data asset tags & classifications</li>
+        </ul>
+      </div>
+      <div>
+        <div style="font-weight: 600; font-size: 13px; margin-bottom: 6px;">Backends</div>
+        <div style="font-size: 12px; color: #64748b;">DataHub, Amundsen, OpenMetadata, or built-in SQLite catalog.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>🔍 Observability Agent</h3>
+  <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px;">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+      <div>
+        <div style="font-weight: 600; font-size: 13px; margin-bottom: 6px;">MCP Tools</div>
+        <ul style="font-size: 12px; color: #64748b; margin: 0; padding-left: 16px; line-height: 1.8;">
+          <li><code>get_pipeline_health</code> — pipeline status & history</li>
+          <li><code>alert_summary</code> — recent alerts & trends</li>
+          <li><code>cost_analysis</code> — warehouse spend & optimization</li>
+          <li><code>suggest_optimizations</code> — cost/performance tips</li>
+        </ul>
+      </div>
+      <div>
+        <div style="font-weight: 600; font-size: 13px; margin-bottom: 6px;">Backends</div>
+        <div style="font-size: 12px; color: #64748b;">Prometheus, Grafana, Datadog, or cloud-native (CloudWatch, Stackdriver).</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p style="color: #94a3b8; font-size: 13px; margin-top: 20px;">Section 5 complete — semua 6 agent udah didefinisikan. Lanjut ke Section 6: Deployment & Packaging?</p>

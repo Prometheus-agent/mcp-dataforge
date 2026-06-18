@@ -1,0 +1,126 @@
+<h2>🏗️ Multi-Agent Framework untuk Data Engineering</h2>
+<p class="subtitle">High-Level Architecture — Agent Mesh dengan Plugin System</p>
+
+<div class="mockup" style="margin: 20px 0; padding: 20px;">
+  <div style="text-align: center; margin-bottom: 12px; color: #999; font-size: 12px;">User Interface Layer</div>
+  <div style="display: flex; gap: 8px; justify-content: center; margin-bottom: 20px;">
+    <span style="background: #4f46e5; color: white; padding: 6px 16px; border-radius: 20px; font-size: 13px;">CLI</span>
+    <span style="background: #7c3aed; color: white; padding: 6px 16px; border-radius: 20px; font-size: 13px;">Chat/NL</span>
+    <span style="background: #2563eb; color: white; padding: 6px 16px; border-radius: 20px; font-size: 13px;">API</span>
+    <span style="background: #0891b2; color: white; padding: 6px 16px; border-radius: 20px; font-size: 13px;">IDE Plugin</span>
+    <span style="background: #059669; color: white; padding: 6px 16px; border-radius: 20px; font-size: 13px;">Web UI</span>
+  </div>
+
+  <div style="text-align: center; margin-bottom: 12px; color: #999; font-size: 12px;">── Orchestration Layer ──</div>
+  <div style="background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 16px; margin-bottom: 20px;">
+    <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+      <span style="background: #0f172a; border: 1px solid #475569; padding: 8px 14px; border-radius: 8px; font-size: 12px;">🧠 Router Agent</span>
+      <span style="background: #0f172a; border: 1px solid #475569; padding: 8px 14px; border-radius: 8px; font-size: 12px;">🔄 Task Planner</span>
+      <span style="background: #0f172a; border: 1px solid #475569; padding: 8px 14px; border-radius: 8px; font-size: 12px;">📊 Context Manager</span>
+      <span style="background: #0f172a; border: 1px solid #475569; padding: 8px 14px; border-radius: 8px; font-size: 12px;">🔗 Collaboration Bus</span>
+    </div>
+  </div>
+
+  <div style="text-align: center; margin-bottom: 12px; color: #999; font-size: 12px;">── Specialist Agents (Plugin-based) ──</div>
+  <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px;">
+    <div style="background: #1e3a5f; border: 1px solid #1d4ed8; border-radius: 10px; padding: 12px;">
+      <div style="font-size: 24px; margin-bottom: 4px;">🔧</div>
+      <div style="font-weight: 600; font-size: 14px;">Pipeline Agent</div>
+      <div style="font-size: 11px; color: #94a3b8;">SQL, Python, Spark, dbt</div>
+    </div>
+    <div style="background: #2d1b69; border: 1px solid #7c3aed; border-radius: 10px; padding: 12px;">
+      <div style="font-size: 24px; margin-bottom: 4px;">✅</div>
+      <div style="font-weight: 600; font-size: 14px;">Data Quality Agent</div>
+      <div style="font-size: 11px; color: #94a3b8;">Anomalies, validation, lineage</div>
+    </div>
+    <div style="background: #1a3a2a; border: 1px solid #059669; border-radius: 10px; padding: 12px;">
+      <div style="font-size: 24px; margin-bottom: 4px;">📐</div>
+      <div style="font-weight: 600; font-size: 14px;">Schema Agent</div>
+      <div style="font-size: 11px; color: #94a3b8;">Evolution, migration, contracts</div>
+    </div>
+    <div style="background: #3a2a1a; border: 1px solid #d97706; border-radius: 10px; padding: 12px;">
+      <div style="font-size: 24px; margin-bottom: 4px;">⚡</div>
+      <div style="font-weight: 600; font-size: 14px;">Orchestration Agent</div>
+      <div style="font-size: 11px; color: #94a3b8;">Airflow, Dagster, schedules</div>
+    </div>
+    <div style="background: #3a1a2a; border: 1px solid #db2777; border-radius: 10px; padding: 12px;">
+      <div style="font-size: 24px; margin-bottom: 4px;">📚</div>
+      <div style="font-weight: 600; font-size: 14px;">Catalog Agent</div>
+      <div style="font-size: 11px; color: #94a3b8;">Discovery, docs, impact analysis</div>
+    </div>
+    <div style="background: #1a2a3a; border: 1px solid #0891b2; border-radius: 10px; padding: 12px;">
+      <div style="font-size: 24px; margin-bottom: 4px;">🔍</div>
+      <div style="font-weight: 600; font-size: 14px;">Observability Agent</div>
+      <div style="font-size: 11px; color: #94a3b8;">Monitoring, alerting, tracing</div>
+    </div>
+  </div>
+
+  <div style="text-align: center; margin-bottom: 12px; color: #999; font-size: 12px;">── Integration & Execution Layer ──</div>
+  <div style="background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 16px; margin-bottom: 16px;">
+    <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+      <span style="background: #0f172a; border: 1px solid #475569; padding: 4px 12px; border-radius: 8px; font-size: 11px;">Spark</span>
+      <span style="background: #0f172a; border: 1px solid #475569; padding: 4px 12px; border-radius: 8px; font-size: 11px;">dbt</span>
+      <span style="background: #0f172a; border: 1px solid #475569; padding: 4px 12px; border-radius: 8px; font-size: 11px;">Airflow</span>
+      <span style="background: #0f172a; border: 1px solid #475569; padding: 4px 12px; border-radius: 8px; font-size: 11px;">Dagster</span>
+      <span style="background: #0f172a; border: 1px solid #475569; padding: 4px 12px; border-radius: 8px; font-size: 11px;">Snowflake</span>
+      <span style="background: #0f172a; border: 1px solid #475569; padding: 4px 12px; border-radius: 8px; font-size: 11px;">BigQuery</span>
+      <span style="background: #0f172a; border: 1px solid #475569; padding: 4px 12px; border-radius: 8px; font-size: 11px;">Kafka</span>
+      <span style="background: #0f172a; border: 1px solid #475569; padding: 4px 12px; border-radius: 8px; font-size: 11px;">S3/GCS</span>
+    </div>
+  </div>
+</div>
+
+<h3>🤖 Flow: Multi-Agent Collaboration</h3>
+<div style="background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 16px; margin: 12px 0;">
+  <div style="font-family: monospace; font-size: 14px; line-height: 1.8;">
+    <span style="color: #fbbf24;">User</span> → <span style="color: #4f46e5;">"Find null rates in prod pipeline and fix schema if needed"</span>
+    <br/>
+    ↓
+    <br/>
+    <span style="color: #60a5fa;">Router Agent</span> → Parse intent → Task Plan
+    <br/>
+    ↓
+    <br/>
+    <span style="color: #34d399;">Pipeline Agent</span> 🔁 <span style="color: #a78bfa;">Schema Agent</span> 🔁 <span style="color: #f472b6;">DQ Agent</span>
+    <br/>
+    <span style="color: #94a3b8;">[collaborate: share context, validate each other, produce unified result]</span>
+    <br/>
+    ↓
+    <br/>
+    <span style="color: #60a5fa;">Router Agent</span> → Synthesize → Present to User
+  </div>
+</div>
+
+<h3>🔑 Key Design Principles</h3>
+<div class="options" data-multiselect>
+  <div class="option" data-choice="extensible" onclick="toggleSelect(this)">
+    <div class="letter">1</div>
+    <div class="content">
+      <h3>Plugin-based Agent Registry</h3>
+      <p>Siapa pun bisa bikin agent plugin baru. Cukup implement Agent interface, daftarkan, langsung bisa dipanggil.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="context" onclick="toggleSelect(this)">
+    <div class="letter">2</div>
+    <div class="content">
+      <h3>Shared Context Bus</h3>
+      <p>Agent bisa share context, passing hasil kerja ke agent lain tanpa redundancy.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="tool" onclick="toggleSelect(this)">
+    <div class="letter">3</div>
+    <div class="content">
+      <h3>Tool-first Execution</h3>
+      <p>Bukan cuma "ngobrol" — agent benar-benar execute SQL, run pipeline, validasi data.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="safety" onclick="toggleSelect(this)">
+    <div class="letter">4</div>
+    <div class="content">
+      <h3>Human-in-the-Loop</h3>
+      <p>Semua destructive action butuh approval. Rollback capability built-in.</p>
+    </div>
+  </div>
+</div>
+
+<p style="color: #94a3b8; font-size: 13px; margin-top: 20px;">⬆️ Click any principle above to highlight it. Take a look and let me know what you think!</p>

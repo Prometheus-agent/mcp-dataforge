@@ -1,0 +1,125 @@
+<h2>🔄 A2A Communication Protocol</h2>
+<p class="subtitle" style="margin-bottom: 20px;">Bagaimana agent-agent berkomunikasi via MCP</p>
+
+<div class="section">
+  <h3>📡 Transport: MCP Native</h3>
+  <p style="font-size: 14px; color: #64748b;">Setiap agent adalah MCP Server. Orchestrator adalah MCP Client yang manggil agent lain, dan agent juga bisa manggil agent lain.</p>
+  <div style="display: flex; gap: 16px; margin: 16px 0;">
+    <div style="flex: 1; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px;">
+      <div style="font-size: 13px; font-weight: 600; margin-bottom: 4px;">🖥️ stdio</div>
+      <div style="font-size: 12px; color: #64748b;">Default untuk local development. Subprocess MCP server via CLI.</div>
+      <div style="background: #f1f5f9; border-radius: 6px; padding: 8px; margin-top: 8px; font-family: monospace; font-size: 12px;">
+        dataforge agent run pipeline --port 9001
+      </div>
+    </div>
+    <div style="flex: 1; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px;">
+      <div style="font-size: 13px; font-weight: 600; margin-bottom: 4px;">🌐 SSE</div>
+      <div style="font-size: 12px; color: #64748b;">Untuk production/remote. Agent jalan sebagai HTTP server, komunikasi via SSE.</div>
+      <div style="background: #f1f5f9; border-radius: 6px; padding: 8px; margin-top: 8px; font-family: monospace; font-size: 12px;">
+        dataforge agent run dq --host 0.0.0.0 --port 9002
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>📨 Message Flow</h3>
+  <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; font-family: monospace; font-size: 13px; line-height: 2;">
+    <span style="color: #6b7280;"># 1. Orchestrator receives task from user</span><br/>
+    <span style="color: #2563eb;">Orchestrator</span> ← <span style="color: #059669;">User</span>: <span style="color: #10b981;">"Fix nulls in orders pipeline"</span><br/>
+    <br/>
+    <span style="color: #6b7280;"># 2. Intent parsing + task planning</span><br/>
+    <span style="color: #2563eb;">Orchestrator</span>: plan → [pipeline, schema, dq]<br/>
+    <br/>
+    <span style="color: #6b7280;"># 3. Orchestrator calls Pipeline Agent via MCP tool call</span><br/>
+    <span style="color: #2563eb;">Orchestrator</span> → <span style="color: #d97706;">Pipeline Agent</span>: <span style="color: #10b981;">list_tools()</span><br/>
+    <span style="color: #2563eb;">Orchestrator</span> → <span style="color: #d97706;">Pipeline Agent</span>: <span style="color: #10b981;">execute("scan orders table")</span><br/>
+    <span style="color: #d97706;">Pipeline Agent</span> → <span style="color: #2563eb;">Orchestrator</span>: {result, artifacts, confidence}<br/>
+    <br/>
+    <span style="color: #6b7280;"># 4. Orchestrator passes context to next agent</span><br/>
+    <span style="color: #2563eb;">Orchestrator</span> → <span style="color: #a855f7;">Schema Agent</span>: <span style="color: #10b981;">execute("detect drift on orders", context: {pipeline_result})</span><br/>
+    <span style="color: #a855f7;">Schema Agent</span> → <span style="color: #2563eb;">Orchestrator</span>: {drift_report}<br/>
+    <br/>
+    <span style="color: #6b7280;"># 5. Synthesize results → present to user</span><br/>
+    <span style="color: #2563eb;">Orchestrator</span> → <span style="color: #059669;">User</span>: "Fixed 3 null columns, detected 2 schema drifts, added 5 DQ rules"
+  </div>
+</div>
+
+<div class="section">
+  <h3>📋 Message Payload Structure</h3>
+  <p style="font-size: 13px; color: #64748b;">MCP tool call → response cycle membawa konteks + artifacts antar agent:</p>
+
+  <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; font-family: monospace; font-size: 13px; line-height: 1.8;">
+    <span style="color: #6b7280;"># Tool call dari Orchestrator ke Agent</span><br/>
+    {<br/>
+    &emsp;<span style="color: #ef4445;">"tool"</span>: <span style="color: #10b981;">"execute"</span>,<br/>
+    &emsp;<span style="color: #ef4445;">"params"</span>: {<br/>
+    &emsp;&emsp;<span style="color: #ef4445;">"task"</span>: <span style="color: #10b981;">"check data quality on orders"</span>,<br/>
+    &emsp;&emsp;<span style="color: #ef4445;">"session_id"</span>: <span style="color: #10b981;">"sess_abc123"</span>,<br/>
+    &emsp;&emsp;<span style="color: #ef4445;">"context"</span>: {<br/>
+    &emsp;&emsp;&emsp;<span style="color: #ef4445;">"pipeline_result"</span>: {...},<br/>
+    &emsp;&emsp;&emsp;<span style="color: #ef4445;">"artifacts"</span>: [<span style="color: #10b981;">"schema_drift_report.md"</span>]<br/>
+    &emsp;&emsp;}<br/>
+    &emsp;}<br/>
+    }<br/>
+    <br/>
+    <span style="color: #6b7280;"># Response</span><br/>
+    {<br/>
+    &emsp;<span style="color: #ef4445;">"status"</span>: <span style="color: #10b981;">"success"</span>,<br/>
+    &emsp;<span style="color: #ef4445;">"summary"</span>: <span style="color: #10b981;">"Found 8 null violations in 3 columns"</span>,<br/>
+    &emsp;<span style="color: #ef4445;">"confidence"</span>: <span style="color: #10b981;">0.94</span>,<br/>
+    &emsp;<span style="color: #ef4445;">"artifacts"</span>: {<span style="color: #10b981;">"dq_report.json"</span>: {...}},<br/>
+    &emsp;<span style="color: #ef4445;">"requires_approval"</span>: <span style="color: #fbbf24;">false</span><br/>
+    }
+  </div>
+</div>
+
+<div class="section">
+  <h3>🔗 A2A Patterns</h3>
+  <div style="display: grid; gap: 12px;">
+    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px;">
+      <div style="display: flex; gap: 10px; align-items: flex-start;">
+        <span style="font-size: 20px;">➡️</span>
+        <div>
+          <div style="font-weight: 600; font-size: 14px;">Direct Call — Orchestrator → Agent</div>
+          <div style="font-size: 13px; color: #64748b;">Orchestrator manggil tool agent langsung. Paling sederhana, cocok untuk sequential pipeline.</div>
+          <div style="background: #f1f5f9; border-radius: 6px; padding: 8px; margin-top: 6px; font-family: monospace; font-size: 12px;">agent.call_tool("pipeline", "execute", {"task": "..."})</div>
+        </div>
+      </div>
+    </div>
+    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px;">
+      <div style="display: flex; gap: 10px; align-items: flex-start;">
+        <span style="font-size: 20px;">🌐</span>
+        <div>
+          <div style="font-weight: 600; font-size: 14px;">Broadcast — Fan-out ke multiple agents</div>
+          <div style="font-size: 13px; color: #64748b;">Orchestrator kirim task ke beberapa agent parallel, tunggu semua selesai, merge hasil.</div>
+          <div style="background: #f1f5f9; border-radius: 6px; padding: 8px; margin-top: 6px; font-family: monospace; font-size: 12px;">parallel([pipeline.call(...), dq.call(...), schema.call(...)])</div>
+        </div>
+      </div>
+    </div>
+    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px;">
+      <div style="display: flex; gap: 10px; align-items: flex-start;">
+        <span style="font-size: 20px;">🔁</span>
+        <div>
+          <div style="font-weight: 600; font-size: 14px;">Agent-to-Agent — Direct (via Orchestrator proxy)</div>
+          <div style="font-size: 13px; color: #64748b;">Agent A minta Orchestrator untuk forward message ke Agent B. Orchestrator manage context & routing.</div>
+          <div style="background: #f1f5f9; border-radius: 6px; padding: 8px; margin-top: 6px; font-family: monospace; font-size: 12px;">orchestrator.forward(from="pipeline", to="dq", payload={...})</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>🛡️ Human-in-the-Loop</h3>
+  <p style="font-size: 13px; color: #64748b;">Setiap agent response bisa minta approval sebelum dieksekusi. Orchestrator handle escalation:</p>
+  <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; font-family: monospace; font-size: 12px; line-height: 1.8;">
+    <span style="color: #6b7280;"># Agent meminta approval</span><br/>
+    Agent → <span style="color: #2563eb;">Orchestrator</span>: {status: <span style="color: #10b981;">"pending_approval"</span>, action: <span style="color: #10b981;">"ALTER TABLE orders DROP COLUMN temp"</span>}<br/>
+    <span style="color: #2563eb;">Orchestrator</span> → <span style="color: #059669;">User</span>: ⚠️ "Pipeline Agent wants to drop a column. Approve?"<br/>
+    <span style="color: #059669;">User</span> → <span style="color: #2563eb;">Orchestrator</span>: 👍 yes<br/>
+    <span style="color: #2563eb;">Orchestrator</span> → Agent: continue
+  </div>
+</div>
+
+<p style="color: #94a3b8; font-size: 13px; margin-top: 20px;">Apakah A2A communication ini sudah sesuai? Ada yang kurang atau perlu diubah?</p>

@@ -1,0 +1,102 @@
+<h2>🧠 Multi-Agent Collaboration Model</h2>
+<p class="subtitle">Bagaimana agent-agent berkomunikasi dan bekerja sama</p>
+
+<div class="section">
+  <h3>📋 Task Lifecycle</h3>
+  <div class="mockup" style="padding: 20px;">
+    <div style="display: flex; gap: 0; align-items: center; justify-content: center; font-size: 13px; flex-wrap: wrap;">
+      <div style="background: #4f46e5; padding: 10px 16px; border-radius: 8px 0 0 8px; color: white;">1. Parse</div>
+      <div style="font-size: 20px; color: #475569;">→</div>
+      <div style="background: #7c3aed; padding: 10px 16px; color: white;">2. Plan</div>
+      <div style="font-size: 20px; color: #475569;">→</div>
+      <div style="background: #2563eb; padding: 10px 16px; color: white;">3. Delegate</div>
+      <div style="font-size: 20px; color: #475569;">→</div>
+      <div style="background: #0891b2; padding: 10px 16px; color: white;">4. Execute</div>
+      <div style="font-size: 20px; color: #475569;">→</div>
+      <div style="background: #059669; padding: 10px 16px; color: white;">5. Verify</div>
+      <div style="font-size: 20px; color: #475569;">→</div>
+      <div style="background: #d97706; padding: 10px 16px; border-radius: 0 8px 8px 0; color: white;">6. Synthesize</div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>🤝 3 Collaboration Patterns</h3>
+
+  <div style="background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 16px; margin: 12px 0;">
+    <div style="display: flex; gap: 12px; align-items: flex-start;">
+      <span style="font-size: 28px;">🔗</span>
+      <div>
+        <h4 style="margin: 0 0 4px 0;">Pipeline — Sequential</h4>
+        <p style="margin: 0; font-size: 13px;">Output agent A → input agent B → input agent C</p>
+        <div style="background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 8px; margin-top: 8px; font-family: monospace; font-size: 12px;">
+          <span style="color: #60a5fa;">Schema Agent:</span> detect schema drift →
+          <span style="color: #34d399;">Pipeline Agent:</span> adjust SQL →
+          <span style="color: #f472b6;">DQ Agent:</span> validate output
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 16px; margin: 12px 0;">
+    <div style="display: flex; gap: 12px; align-items: flex-start;">
+      <span style="font-size: 28px;">🌐</span>
+      <div>
+        <h4 style="margin: 0 0 4px 0;">Parallel — Fan-out</h4>
+        <p style="margin: 0; font-size: 13px;">Satu task, banyak agent independen, results di-merge</p>
+        <div style="background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 8px; margin-top: 8px; font-family: monospace; font-size: 12px;">
+          <span style="color: #fbbf24;">Router:</span> "Audit data platform"<br/>
+          ├─ <span style="color: #34d399;">Pipeline Agent:</span> scan pipeline health<br/>
+          ├─ <span style="color: #a78bfa;">Schema Agent:</span> check schema consistency<br/>
+          └─ <span style="color: #f472b6;">DQ Agent:</span> profile data quality
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 16px; margin: 12px 0;">
+    <div style="display: flex; gap: 12px; align-items: flex-start;">
+      <span style="font-size: 28px;">🔄</span>
+      <div>
+        <h4 style="margin: 0 0 4px 0;">Debate — Review & Validate</h4>
+        <p style="margin: 0; font-size: 13px;">Satu agent produce, agent lain review/kritik sebelum final</p>
+        <div style="background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 8px; margin-top: 8px; font-family: monospace; font-size: 12px;">
+          <span style="color: #34d399;">Pipeline Agent:</span> generates SQL fix →<br/>
+          <span style="color: #a78bfa;">Schema Agent:</span> reviews schema impact →<br/>
+          <span style="color: #f472b6;">DQ Agent:</span> validates edge cases →<br/>
+          <span style="color: #60a5fa;">All:</span> consensus → execute or revise
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>📦 Context Passing — AgentMessage Protocol</h3>
+  <div style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 14px; font-family: monospace; font-size: 13px; line-height: 1.6;">
+{<br/>
+  <span style="color: #f472b6;">"from"</span>: <span style="color: #34d399;">"pipeline-agent"</span>,<br/>
+  <span style="color: #f472b6;">"to"</span>: <span style="color: #34d399;">"schema-agent"</span>,<br/>
+  <span style="color: #f472b6;">"type"</span>: <span style="color: #34d399;">"review_request | result | question | approval"</span>,<br/>
+  <span style="color: #f472b6;">"context"</span>: {<br/>
+  <span style="color: #f472b6;">  "task_id"</span>: <span style="color: #34d399;">"..."</span>,<br/>
+  <span style="color: #f472b6;">  "session_id"</span>: <span style="color: #34d399;">"..."</span>,<br/>
+  <span style="color: #f472b6;">  "shared_context"</span>: { ... },<br/>
+  <span style="color: #f472b6;">  "artifacts"</span>: [<span style="color: #34d399;">"file:///pipeline.py"</span>]<br/>
+  },<br/>
+  <span style="color: #f472b6;">"require_approval"</span>: <span style="color: #fbbf24;">true</span><br/>
+}
+  </div>
+</div>
+
+<div class="section">
+  <h3>⚖️ Conflict Resolution</h3>
+  <p>Ketika agent ngasih pendapat berbeda:</p>
+  <ul>
+    <li><strong>Weighted voting</strong> — tiap agent punya confidence score + authority level</li>
+    <li><strong>Escalation</strong> — ke Router Agent untuk arbitrase, atau ke human</li>
+    <li><strong>Auto-retry</strong> — kalau result uncertainty tinggi, agent bisa minta re-execute dengan lebih banyak context</li>
+  </ul>
+</div>
+
+<p style="color: #94a3b8; font-size: 13px; margin-top: 20px;">Apakah collaboration model ini sudah sesuai ekspektasi? Ada yang mau ditambah/diubah?</p>

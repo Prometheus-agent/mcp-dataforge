@@ -1,0 +1,98 @@
+<h2>🧩 Plugin System — Agent Registry</h2>
+<p class="subtitle">Bagaimana specialist agents didaftarkan, ditemukan, dan dimuat</p>
+
+<div class="section">
+  <h3>📁 Agent Plugin Structure</h3>
+  <div style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 14px; font-family: monospace; font-size: 13px; line-height: 1.7;">
+dataforge/<br/>
+├── plugins/<br/>
+│   ├── agent-pipeline/<br/>
+│   │   ├── agent.py &emsp;&emsp;&emsp;<span style="color: #6b7280;"># Agent implementation</span><br/>
+│   │   ├── tools/ &emsp;&emsp;&emsp;&emsp;<span style="color: #6b7280;"># Tools: execute_sql, run_spark, ...</span><br/>
+│   │   ├── prompts.py &emsp;&emsp;&emsp;<span style="color: #6b7280;"># Agent system prompt + few-shot</span><br/>
+│   │   └── pyproject.toml &emsp;&emsp;<span style="color: #6b7280;"># Metadata: name, version, capabilities</span><br/>
+│   ├── agent-dq/<br/>
+│   ├── agent-schema/<br/>
+│   └── ...<br/>
+└── core/<br/>
+&emsp;&emsp;├── registry.py &emsp;&emsp;&emsp;<span style="color: #6b7280;"># Agent discovery & loading</span><br/>
+&emsp;&emsp;├── interfaces.py &emsp;&emsp;&emsp;<span style="color: #6b7280;"># Base classes</span><br/>
+&emsp;&emsp;└── bus.py &emsp;&emsp;&emsp;&emsp;&emsp;<span style="color: #6b7280;"># Message bus</span>
+  </div>
+</div>
+
+<div class="section">
+  <h3>🔌 BaseAgent Interface</h3>
+  <div style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 14px; font-family: monospace; font-size: 13px; line-height: 1.7;">
+    <span style="color: #f472b6;">class</span> <span style="color: #60a5fa;">BaseAgent</span>(ABC):<br/>
+    &emsp;<span style="color: #6b7280;"># Metadata</span><br/>
+    &emsp;name: <span style="color: #34d399;">str</span> &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;<span style="color: #6b7280;"># "pipeline-agent"</span><br/>
+    &emsp;capabilities: <span style="color: #34d399;">list[str]</span> &emsp;<span style="color: #6b7280;"># ["sql", "spark", "dbt", ...]</span><br/>
+    <br/>
+    &emsp;<span style="color: #f472b6;">async def</span> <span style="color: #60a5fa;">handle</span>(msg: Message) → Response<br/>
+    &emsp;<span style="color: #f472b6;">async def</span> <span style="color: #60a5fa;">validate</span>(task: Task) → ValidationResult<br/>
+    &emsp;<span style="color: #f472b6;">def</span> <span style="color: #60a5fa;">get_tools</span>() → list[Tool]
+  </div>
+</div>
+
+<div class="section">
+  <h3>🔎 Agent Discovery</h3>
+  <p>Dua mekanisme:</p>
+  <div style="display: flex; gap: 16px; margin: 12px 0;">
+    <div style="flex: 1; background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 14px;">
+      <div style="font-weight: 600; color: #60a5fa;">📂 Filesystem-based</div>
+      <p style="font-size: 13px;">Scan plugin directories, detect pyproject.toml, load on demand. Cocok untuk development lokal.</p>
+    </div>
+    <div style="flex: 1; background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 14px;">
+      <div style="font-weight: 600; color: #60a5fa;">📦 Package Registry</div>
+      <p style="font-size: 13px;">Install via pip: <code>pip install dataforge-agent-dq</code>. Register via entry_points. Cocok untuk production dan sharing.</p>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>📊 Agent Resolution Flow</h3>
+  <div style="background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 16px; font-family: monospace; font-size: 13px;">
+    <span style="color: #60a5fa;">Router</span>: "Need to check data quality on customers table"<br/>
+    ↓ <span style="color: #6b7280;">capability matching</span><br/>
+    <span style="color: #60a5fa;">Registry</span>: Agents with "data_quality" capability → [dq-agent, pipeline-agent]<br/>
+    ↓ <span style="color: #6b7280;">scoring (confidence + load + specialization)</span><br/>
+    → <span style="color: #34d399;">dq-agent (score: 0.92)</span><br/>
+    → pipeline-agent (score: 0.45)<br/>
+    ↓ <span style="color: #6b7280;">optional: parallel delegation</span><br/>
+    → <span style="color: #34d399;">dq-agent</span>: run data profiling<br/>
+    → <span style="color: #34d399;">pipeline-agent</span>: check upstream transformations
+  </div>
+</div>
+
+<div class="section">
+  <h3>📋 Built-in Plugin Skeleton</h3>
+  <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+    <div style="background: #1e3a5f; border: 1px solid #1d4ed8; border-radius: 8px; padding: 12px;">
+      <strong>pipeline-agent</strong><br/>
+      <span style="font-size: 12px; color: #94a3b8;">SQL generation, PySpark, dbt, pipeline debug</span>
+    </div>
+    <div style="background: #2d1b69; border: 1px solid #7c3aed; border-radius: 8px; padding: 12px;">
+      <strong>dq-agent</strong><br/>
+      <span style="font-size: 12px; color: #94a3b8;">Anomaly detection, profiling, validation rules, lineage</span>
+    </div>
+    <div style="background: #1a3a2a; border: 1px solid #059669; border-radius: 8px; padding: 12px;">
+      <strong>schema-agent</strong><br/>
+      <span style="font-size: 12px; color: #94a3b8;">Schema drift detection, migration, column-level lineage</span>
+    </div>
+    <div style="background: #3a2a1a; border: 1px solid #d97706; border-radius: 8px; padding: 12px;">
+      <strong>orchestrate-agent</strong><br/>
+      <span style="font-size: 12px; color: #94a3b8;">DAG management, retry, dependency resolution</span>
+    </div>
+    <div style="background: #3a1a2a; border: 1px solid #db2777; border-radius: 8px; padding: 12px;">
+      <strong>catalog-agent</strong><br/>
+      <span style="font-size: 12px; color: #94a3b8;">Data discovery, documentation, impact analysis</span>
+    </div>
+    <div style="background: #1a2a3a; border: 1px solid #0891b2; border-radius: 8px; padding: 12px;">
+      <strong>observability-agent</strong><br/>
+      <span style="font-size: 12px; color: #94a3b8;">Monitoring, alert routing, cost analysis</span>
+    </div>
+  </div>
+</div>
+
+<p style="color: #94a3b8; font-size: 13px; margin-top: 20px;">Plugin system-nya gimana? Ada yang perlu disesuaikan?</p>
