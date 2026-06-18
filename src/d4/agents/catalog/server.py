@@ -143,7 +143,7 @@ def impact_analysis(table: str, changes: list[dict]) -> dict:
 
     changes: list of {"type": "drop"|"rename"|"modify", "column": str, ...}
     """
-    table_data = _ensure_table(table)
+    _ensure_table(table)  # ensure entry exists
     usage = _CATALOG["usage"].get(table, {})
     downstream = usage.get("downstream", [])
 
