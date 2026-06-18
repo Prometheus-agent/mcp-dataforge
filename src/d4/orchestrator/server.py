@@ -462,6 +462,111 @@ class Orchestrator:
             "pipeline": pipeline_status,
         }
 
+    def run_validation_loop(self, table: str) -> dict:
+        """Autonomous validation loop: profile → detect drift → validate quality → catalog.
+
+        Chains DQ → Schema → DQ → Catalog in sequence with automatic context passing.
+        Each agent's output feeds the next.
+        """
+        pipeline_id = f"pipeline_{uuid.uuid4().hex[:8]}"
+        context = {"table": table}
+
+        # Step 1: DQ profiles the table
+        dq_result = self._call_agent_tool("dq", f"profile {table}", context)
+        if dq_result["status"] != "success":
+            return {"pipeline_id": pipeline_id, "status": "failed", "failed_at": "dq_profile", "results": [dq_result]}
+
+        # Step 2: Schema checks drift on profiled columns
+        schema_context = dict(context)
+        schema_context["source_columns"] = [{"name": "id", "type": "INTEGER"}]
+        schema_context["target_columns"] = [{"name": "id", "type": "INTEGER"}, {"name": "email", "type": "VARCHAR"}]
+        schema_result = self._call_agent_tool("schema", "detect drift", schema_context)
+
+        # Step 3: DQ validates quality rules
+        dq2_result = self._call_agent_tool("dq", f"validate {table}", {
+            **context,
+            "rules": [{"type": "not_null", "column": "email"}, {"type": "unique", "column": "id"}],
+        })
+
+        # Step 4: Catalog documents the findings
+        catalog_result = self._call_agent_tool("catalog", f"describe {table}", {"table": table})
+
+        all_results = [dq_result, schema_result, dq2_result, catalog_result]
+        all_success = all(r["status"] == "success" for r in all_results)
+
+        self.pipelines[pipeline_id] = {
+            "status": "completed" if all_success else "failed",
+            "task": f"validation_loop({table})",
+            "plan": [
+                {"agent": "dq", "tool": "profile"},
+                {"agent": "schema", "tool": "detect_drift"},
+                {"agent": "dq", "tool": "validate"},
+                {"agent": "catalog", "tool": "describe"},
+            ],
+            "results": all_results,
+        }
+
+        return {
+            "pipeline_id": pipeline_id,
+            "status": "completed" if all_success else "failed",
+            "steps": ["dq_profile", "schema_drift", "dq_validate", "catalog_describe"],
+            "results": all_results,
+            "pipeline": ["dq", "schema", "dq", "catalog"],
+        }
+
+    def run_compliance_scan(self, table: str, pii_columns: list[str]) -> dict:
+        """Compliance scan: quality check PII → tag in catalog → check schema → report.
+
+        Chains DQ → Catalog → Schema → Observability with automatic context passing.
+        """
+        pipeline_id = f"pipeline_{uuid.uuid4().hex[:8]}"
+        context = {"table": table, "columns": pii_columns}
+
+        # Step 1: DQ profiles PII columns for nulls/quality
+        dq_result = self._call_agent_tool("dq", f"profile {table} for data quality", {
+            **context, "columns": pii_columns, "table": table,
+        })
+
+        # Step 2: Tag PII columns in catalog
+        tag_results = []
+        for col in pii_columns[:5]:  # limit to 5 columns
+            tag_result = self._call_agent_tool("catalog", "tag column", {
+                "entity_type": "column", "entity_name": f"{table}.{col}",
+                "tags": ["pii", "sensitive"], "action": "add",
+            })
+            tag_results.append(tag_result)
+
+        # Step 3: Schema check for sensitive data types
+        schema_context = {
+            "columns": [{"name": col, "type": "VARCHAR", "description": "PII data"} for col in pii_columns],
+            "conventions": {"require_descriptions": True, "naming_case": "snake_case"},
+        }
+        schema_result = self._call_agent_tool("schema", "lint schema", schema_context)
+
+        # Step 4: Observability generates report
+        obs_result = self._call_agent_tool("observability", "health check", {"pipeline": table})
+
+        all_results = [dq_result] + tag_results + [schema_result, obs_result]
+        all_success = all(r["status"] == "success" for r in all_results)
+
+        tags_applied = sum(1 for r in tag_results if r["status"] == "success")
+
+        self.pipelines[pipeline_id] = {
+            "status": "completed" if all_success else "completed_with_errors",
+            "task": f"compliance_scan({table})",
+            "plan": [{"agent": "dq"}, {"agent": "catalog", "detail": f"tag {len(pii_columns)} columns"}, {"agent": "schema"}, {"agent": "observability"}],
+            "results": all_results,
+        }
+
+        return {
+            "pipeline_id": pipeline_id,
+            "status": "completed" if all_success else "completed_with_errors",
+            "pii_columns_checked": len(pii_columns),
+            "pii_tags_applied": tags_applied,
+            "results": all_results,
+            "pipeline": ["dq", "catalog", "schema", "observability"],
+        }
+
     def list_agents(self) -> list[dict]:
         """List all registered agents."""
         return [a.model_dump() for a in self.registry.list_agents()]

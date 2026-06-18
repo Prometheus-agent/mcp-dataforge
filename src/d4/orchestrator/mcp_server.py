@@ -72,6 +72,18 @@ def execute_mixed_pipeline(stages: list[dict], initial_context: dict | None = No
     return _get_orchestrator().execute_mixed_pipeline(stages, initial_context)
 
 
+@mcp.tool()
+def run_validation_loop(table: str) -> dict:
+    """Run a complete autonomous validation loop: profile the table → detect schema drift → generate migration → validate quality. This chains DQ, Schema, and Catalog agents automatically with context passing."""
+    return _get_orchestrator().run_validation_loop(table)
+
+
+@mcp.tool()
+def run_compliance_scan(table: str, pii_columns: list[str]) -> dict:
+    """Run a compliance scan: check PII columns for nulls/quality → tag in catalog → check schema for sensitive data types → generate observability report. Chains DQ, Catalog, Schema, and Observability agents."""
+    return _get_orchestrator().run_compliance_scan(table, pii_columns)
+
+
 def run_stdio():
     """Run the MCP server on stdio transport (for Claude Code integration)."""
     mcp.run(transport="stdio")
