@@ -249,6 +249,31 @@ tests/                    # 153+ tests across all modules
 
 ---
 
+## Building a Plugin
+
+DataForge supports third-party agent plugins:
+
+```bash
+cp -r templates/d4-plugin d4-plugin-my-agent
+cd d4-plugin-my-agent
+# Rename <name> to your agent name
+pip install -e .
+```
+
+Register in `config.yaml`:
+
+```yaml
+agents:
+  my_agent:
+    command: "python -m d4_plugin_my_agent.server"
+    transport: stdio
+    capabilities: ["my_capability"]
+```
+
+See `docs/guides/creating-a-plugin.md` for full documentation.
+
+---
+
 ## Roadmap
 
 ### Phase 1 — Core Foundation ✅

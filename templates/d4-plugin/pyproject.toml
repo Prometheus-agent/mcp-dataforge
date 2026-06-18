@@ -1,0 +1,16 @@
+[project]
+name = "d4-plugin-<name>"
+version = "0.1.0"
+description = "A custom DataForge agent plugin"
+requires-python = ">=3.11"
+dependencies = [
+    "mcp>=1.0.0",
+    "mcp-dataforge>=0.1.0",
+]
+
+[build-system]
+requires = ["setuptools>=75.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
