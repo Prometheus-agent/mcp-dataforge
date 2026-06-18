@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@xyflow/react": "^12.11.0",
+    "reactflow": "^11.11.4"
+  }
+}
