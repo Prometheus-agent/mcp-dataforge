@@ -113,7 +113,7 @@ export function DAGView({ plan }: { plan: PlanStep[] }) {
 
   if (nodes.length === 0) {
     return (
-      <div className="flex items-center justify-center h-full text-slate-400 text-sm">
+      <div className="flex items-center justify-center h-full text-slate-400 dark:text-slate-500 text-sm">
         No pipeline steps to visualize
       </div>
     );
@@ -130,7 +130,7 @@ export function DAGView({ plan }: { plan: PlanStep[] }) {
       zoomOnScroll={false}
       className="rounded-lg"
     >
-      <Background color="#f1f5f9" gap={16} />
+      <Background color="var(--bg-dot, #f1f5f9)" gap={16} />
       <Controls showInteractive={false} className="!rounded-lg !border-slate-200 dark:!border-slate-700" />
     </ReactFlow>
   );
