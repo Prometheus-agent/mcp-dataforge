@@ -103,3 +103,8 @@ class TestCreateDefaultConfig:
         cfg = create_default_config()
         assert "catalog" in cfg.agents
         assert "discovery" in cfg.agents["catalog"].capabilities
+
+    def test_default_has_observability_agent(self):
+        cfg = create_default_config()
+        assert "observability" in cfg.agents
+        assert "monitoring" in cfg.agents["observability"].capabilities

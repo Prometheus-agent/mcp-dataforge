@@ -71,6 +71,10 @@ def create_default_config() -> DataForgeConfig:
                 command="python -m d4.agents.catalog.server",
                 capabilities=["catalog", "discovery", "documentation", "tagging"],
             ),
+            "observability": AgentConfig(
+                command="python -m d4.agents.observability.server",
+                capabilities=["observability", "monitoring", "alerts", "cost"],
+            ),
         },
     )
 
