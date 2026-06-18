@@ -1,10 +1,10 @@
 """Orchestrator — routes tasks to specialist agents and tracks pipelines."""
 import uuid
 import importlib
+import time
 from typing import Optional
 from collections import defaultdict
-from datetime import datetime, timedelta
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor, as_completed, TimeoutError
 from d4.registry.agent_registry import AgentRegistry
 from d4.models.core import AgentStep
 
@@ -16,32 +16,62 @@ class Orchestrator:
         self.registry = registry or AgentRegistry()
         self.pipelines: dict[str, dict] = {}
         self.failure_counts: dict[str, int] = defaultdict(int)
-        self.circuit_open_until: dict[str, datetime] = {}
+        self.circuit_open_until: dict[str, float] = {}
+        self.default_timeout: int = 30  # seconds
+        self.max_retries_per_agent: int = 2
 
-    def _call_agent_tool(self, agent_name: str, task: str, context: Optional[dict] = None) -> dict:
-        """Call an agent tool with circuit breaker protection."""
-        # Check circuit breaker
+    def _is_circuit_open(self, agent_name: str) -> bool:
+        """Check if circuit breaker is open for an agent."""
         if agent_name in self.circuit_open_until:
-            if datetime.now() < self.circuit_open_until[agent_name]:
-                return {"status": "error", "agent": agent_name, "error": f"Circuit breaker open for '{agent_name}' (cooldown until {self.circuit_open_until[agent_name].strftime('%H:%M:%S')})"}
-            else:
-                # Circuit has cooled down, reset
-                del self.circuit_open_until[agent_name]
-                self.failure_counts[agent_name] = 0
+            if time.time() < self.circuit_open_until[agent_name]:
+                remaining = int(self.circuit_open_until[agent_name] - time.time())
+                return True, remaining
+            del self.circuit_open_until[agent_name]
+            self.failure_counts[agent_name] = 0
+        return False, 0
 
-        result = self._call_agent_tool_raw(agent_name, task, context)
+    def _call_agent_tool(self, agent_name: str, task: str, context: Optional[dict] = None, timeout: Optional[int] = None) -> dict:
+        """Call an agent tool with circuit breaker, retry, and timeout."""
+        # Check circuit breaker
+        open_flag, remaining = self._is_circuit_open(agent_name)
+        if open_flag:
+            return {"status": "error", "agent": agent_name, "error": f"Circuit breaker open for '{agent_name}' ({remaining}s cooldown remaining)"}
 
-        if result["status"] == "error":
+        timeout_s = timeout or self.default_timeout
+        result = self._call_with_timeout(agent_name, task, context, timeout_s)
+
+        if isinstance(result, dict) and result.get("status") == "error":
             self.failure_counts[agent_name] += 1
             failures = self.failure_counts[agent_name]
             if failures >= 3:
-                cooldown = timedelta(seconds=min(30 * (failures - 2), 300))
-                self.circuit_open_until[agent_name] = datetime.now() + cooldown
-                result["circuit_breaker"] = f"Opened for {int(cooldown.total_seconds())}s after {failures} failures"
+                cooldown = min(30 * (failures - 2), 300)
+                self.circuit_open_until[agent_name] = time.time() + cooldown
+                if isinstance(result, dict):
+                    result["circuit_breaker"] = f"Opened for {cooldown}s after {failures} failures"
+            # Auto-retry on transient errors
+            elif failures <= self.max_retries_per_agent and isinstance(result, dict) and result.get("error"):
+                retry_result = self._call_with_timeout(agent_name, task, context, timeout_s)
+                if isinstance(retry_result, dict) and retry_result.get("status") == "success":
+                    self.failure_counts[agent_name] = max(0, self.failure_counts[agent_name] - 1)
+                    return retry_result
         else:
             self.failure_counts[agent_name] = max(0, self.failure_counts[agent_name] - 1)
 
-        return result
+        return result or {"status": "error", "agent": agent_name, "error": "No result returned"}
+
+    def _call_with_timeout(self, agent_name: str, task: str, context: Optional[dict] = None, timeout_s: int = 30) -> dict:
+        """Call agent tool with a timeout wrapper."""
+        def run():
+            return self._call_agent_tool_raw(agent_name, task, context)
+
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            future = pool.submit(run)
+            try:
+                return future.result(timeout=timeout_s)
+            except TimeoutError:
+                return {"status": "error", "agent": agent_name, "error": f"Agent '{agent_name}' timed out after {timeout_s}s"}
+            except Exception as e:
+                return {"status": "error", "agent": agent_name, "error": str(e)}
 
     def _call_agent_tool_raw(self, agent_name: str, task: str, context: Optional[dict] = None) -> dict:
         """Dynamically import an agent module and call its execute() function."""
@@ -80,24 +110,64 @@ class Orchestrator:
             return {"status": "error", "agent": agent_name, "error": str(e)}
 
     def _route_to_agents(self, task: str) -> list:
-        """Determine which agents should handle a task based on keywords."""
+        """Determine which agents should handle a task using intent-based scoring.
+
+        Combines keyword matching with TF scoring for better intent detection.
+        For example, "check price of gold" has no DE keywords but "check"
+        and "price" loosely match observability/dq.
+        """
         task_lower = task.lower()
+        words = task_lower.split()
+        # Filter out common stop words
+        stop_words = {"a", "an", "the", "in", "on", "at", "to", "for", "of", "and", "or", "is", "are", "it", "with", "by", "from", "as", "be", "we", "i", "you", "they", "he", "she", "me", "my", "this", "that", "these", "those"}
+        meaningful = [w for w in words if w not in stop_words and len(w) > 2]
+
+        agent_map = {
+            "dq": {
+                "capability": "data_quality",
+                "keywords": ["null", "quality", "profile", "anomaly", "validate", "freshness", "accuracy", "check", "verify", "bad", "missing", "duplicate", "corrupt", "outlier"],
+            },
+            "pipeline": {
+                "capability": "sql",
+                "keywords": ["pipeline", "sql", "etl", "elt", "transform", "generate", "spark", "dbt", "query", "table", "view", "run", "execute", "script", "load", "extract", "clean"],
+            },
+            "schema": {
+                "capability": "schema",
+                "keywords": ["schema", "drift", "migration", "column", "lineage", "alter", "change", "modify", "type", "structure", "ddl"],
+            },
+            "catalog": {
+                "capability": "catalog",
+                "keywords": ["catalog", "search", "find", "documentation", "describe", "tag", "discover", "find", "lookup", "browse", "list", "where", "what"],
+            },
+            "observability": {
+                "capability": "observability",
+                "keywords": ["health", "monitor", "alert", "cost", "observe", "sla", "performance", "status", "check", "track", "watch", "dashboard"],
+            },
+            "orchestration": {
+                "capability": "orchestration",
+                "keywords": ["dag", "schedule", "backfill", "orchestrate", "airflow", "retry", "run", "cron", "trigger", "automate", "workflow"],
+            },
+        }
+
+        # Score each agent by TF (term frequency) of keyword matches
+        scores = {}
+        for agent_name, config in agent_map.items():
+            if any(kw in task_lower for kw in config["keywords"]):
+                score = sum(1 for kw in config["keywords"] if kw in task_lower)
+                # Boost score if keyword matches as a whole word
+                for word in meaningful:
+                    if word in config["keywords"]:
+                        score += 2  # whole-word match = stronger signal
+                scores[agent_name] = score
+
+        # Sort by score descending
+        sorted_agents = sorted(scores.items(), key=lambda x: -x[1])
+
         relevant_agents = []
-
-        keyword_map = [
-            ("dq", "data_quality", ["null", "quality", "profile", "anomaly", "validate", "freshness", "accuracy"]),
-            ("pipeline", "sql", ["pipeline", "sql", "etl", "elt", "transform", "generate", "spark", "dbt"]),
-            ("schema", "schema", ["schema", "drift", "migration", "column", "lineage", "alter"]),
-            ("catalog", "catalog", ["catalog", "search", "find", "documentation", "describe", "tag", "discover"]),
-            ("observability", "observability", ["health", "monitor", "alert", "cost", "observe", "sla", "performance"]),
-            ("orchestration", "orchestration", ["dag", "schedule", "backfill", "orchestrate", "airflow", "retry", "run"]),
-        ]
-
-        for agent_name, capability, keywords in keyword_map:
-            if any(kw in task_lower for kw in keywords):
-                matches = self.registry.find_by_capability(capability)
-                if matches:
-                    relevant_agents.append(matches[0])
+        for agent_name, score in sorted_agents:
+            matches = self.registry.find_by_capability(agent_map[agent_name]["capability"])
+            if matches:
+                relevant_agents.append(matches[0])
 
         if not relevant_agents and self.registry.list_agents():
             relevant_agents = [self.registry.list_agents()[0]]
@@ -130,12 +200,14 @@ class Orchestrator:
             "plan": plan,
         }
 
-    def execute_task(self, task: str, context: Optional[dict] = None) -> dict:
+    def execute_task(self, task: str, context: Optional[dict] = None, timeout: Optional[int] = None) -> dict:
         """Route task to agents and execute SEQUENTIALLY, passing context between them.
 
         Agent N's output is merged into the context passed to Agent N+1.
         This enables multi-agent collaboration:
           profile data → fix schema → validate quality → catalog results
+
+        Supports optional timeout (seconds) per agent and pipeline retry policies.
         """
         relevant_agents = self._route_to_agents(task)
         pipeline_id = f"pipeline_{uuid.uuid4().hex[:8]}"
@@ -146,13 +218,13 @@ class Orchestrator:
         for agent in relevant_agents:
             # Update context with previous agent's output
             if results and results[-1]["status"] == "success":
-                # Merge last agent's result so next agent can use it
                 last_result = results[-1].get("result", {})
                 if isinstance(last_result, dict):
                     shared_context["previous_result"] = last_result
                     shared_context["last_agent"] = results[-1]["agent"]
 
-            result = self._call_agent_tool(agent.name, task, shared_context)
+            result = self._call_agent_tool(agent.name, task, shared_context, timeout=timeout)
+            result["step_task"] = task
             results.append(result)
 
         all_success = all(r["status"] == "success" for r in results)
