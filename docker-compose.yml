@@ -1,0 +1,40 @@
+version: "3.9"
+
+services:
+  # MCP Server (stdio mode, for Claude Code / Cursor)
+  mcp-server:
+    build: .
+    container_name: dataforge-mcp
+    stdin_open: true
+    tty: true
+    command: ["dataforge", "mcp-server"]
+    volumes:
+      - ./config.yaml:/app/config.yaml:ro
+    profiles: ["mcp"]
+
+  # Web Dashboard
+  web:
+    build: .
+    container_name: dataforge-web
+    ports:
+      - "8080:8080"
+    command: ["dataforge", "web", "--host", "0.0.0.0", "--port", "8080"]
+    volumes:
+      - ./config.yaml:/app/config.yaml:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/agents"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  # SSE mode (for remote MCP clients)
+  sse:
+    build: .
+    container_name: dataforge-sse
+    ports:
+      - "8081:8080"
+    command: ["dataforge", "mcp-server", "--transport", "sse", "--port", "8080"]
+    volumes:
+      - ./config.yaml:/app/config.yaml:ro
+    profiles: ["sse"]
