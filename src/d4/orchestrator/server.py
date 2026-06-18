@@ -18,7 +18,7 @@ class Orchestrator:
         """Dynamically import an agent module and call its execute() function."""
         agent = self.registry.get(agent_name)
         if not agent:
-            return {"status": "error", "error": f"Agent '{agent_name}' not found"}
+            return {"status": "error", "agent": agent_name, "error": f"Agent '{agent_name}' not found"}
 
         try:
             module_map = {
@@ -31,7 +31,7 @@ class Orchestrator:
             }
             module_path = module_map.get(agent_name)
             if not module_path:
-                return {"status": "error", "error": f"No module mapping for agent '{agent_name}'"}
+                return {"status": "error", "agent": agent_name, "error": f"No module mapping for agent '{agent_name}'"}
 
             module = importlib.import_module(module_path)
             if not hasattr(module, "execute"):
@@ -187,7 +187,7 @@ class Orchestrator:
             "status": pipeline_status,
             "steps": len(results),
             "results": results,
-            "pipeline": [r["agent"] for r in results],
+            "pipeline": [r.get("agent", "?") for r in results],
         }
 
     def execute_parallel(self, steps: list[dict]) -> dict:
@@ -200,6 +200,10 @@ class Orchestrator:
         or running catalog search + pipeline generation side by side.
         """
         pipeline_id = f"pipeline_{uuid.uuid4().hex[:8]}"
+
+        if not steps:
+            self.pipelines[pipeline_id] = {"status": "completed", "task": "parallel_pipeline", "plan": [], "results": []}
+            return {"pipeline_id": pipeline_id, "status": "completed", "total_steps": 0, "results": [], "merged_results": {}, "pipeline": []}
 
         def run_step(step: dict) -> dict:
             agent_name = step["agent"]
@@ -222,7 +226,7 @@ class Orchestrator:
                 try:
                     results[idx] = future.result()
                 except Exception as e:
-                    results[idx] = {"status": "error", "agent": steps[idx]["agent"], "error": str(e), "step_index": idx}
+                    results[idx] = {"status": "error", "agent": steps[idx].get("agent", "unknown"), "error": str(e), "step_index": idx}
 
         all_success = all(r and r["status"] == "success" for r in results)
         pipeline_status = "completed" if all_success else "completed_with_errors"
@@ -232,7 +236,7 @@ class Orchestrator:
             if r and r["status"] == "success":
                 result_data = r.get("result", {})
                 if isinstance(result_data, dict):
-                    merged_results[r["agent"]] = result_data
+                    merged_results[r.get("agent", "unknown")] = result_data
 
         self.pipelines[pipeline_id] = {
             "status": pipeline_status,
@@ -247,7 +251,7 @@ class Orchestrator:
             "total_steps": len(steps),
             "results": results,
             "merged_results": merged_results,
-            "pipeline": [r["agent"] for r in results if r],
+            "pipeline": [r.get("agent", "?") for r in results if r],
         }
 
     def execute_mixed_pipeline(self, stages: list[dict], initial_context: Optional[dict] = None) -> dict:
