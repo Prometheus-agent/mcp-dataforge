@@ -1,4 +1,3 @@
-import pytest
 from d4.registry.agent_registry import AgentRegistry
 from d4.models.core import AgentInfo
 from d4.config.loader import AgentConfig, DataForgeConfig

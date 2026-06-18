@@ -1,5 +1,4 @@
 """DataForge Web UI — FastAPI server for monitoring and controlling the orchestrator."""
-import os
 from pathlib import Path
 from fastapi import FastAPI
 from fastapi.responses import FileResponse, JSONResponse

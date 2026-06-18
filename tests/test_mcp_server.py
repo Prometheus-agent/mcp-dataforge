@@ -1,5 +1,5 @@
 import pytest
-from d4.orchestrator.mcp_server import _get_orchestrator, route_task, list_agents, get_pipeline_status
+from d4.orchestrator.mcp_server import route_task, list_agents, get_pipeline_status
 from d4.models.core import AgentInfo
 from d4.registry.agent_registry import AgentRegistry
 

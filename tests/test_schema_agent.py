@@ -1,4 +1,3 @@
-import pytest
 from d4.agents.schema.server import detect_drift, generate_migration, lint_schema, lineage
 
 

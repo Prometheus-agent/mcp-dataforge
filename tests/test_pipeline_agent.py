@@ -1,4 +1,3 @@
-import pytest
 from d4.agents.pipeline.server import (
     generate_pipeline,
     debug_sql,

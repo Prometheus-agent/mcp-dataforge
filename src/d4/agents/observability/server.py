@@ -212,7 +212,7 @@ def suggest_optimizations(pipeline: str) -> dict:
             "severity": "high",
             "finding": f"Pipeline averages {pip['avg_duration_min']}min runtime",
             "suggestion": "Consider incremental processing instead of full refresh",
-            "estimated_impact": f"Could reduce runtime by 40-60%",
+            "estimated_impact": "Could reduce runtime by 40-60%",
         })
 
     # Success rate analysis

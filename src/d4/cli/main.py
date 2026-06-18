@@ -7,7 +7,7 @@ import click
 from d4 import __version__
 from d4.config.loader import find_config, load_config, write_default_config
 from d4.registry.agent_registry import AgentRegistry
-from d4.orchestrator.server import create_orchestrator, route_task, list_agents, get_pipeline_status
+from d4.orchestrator.server import create_orchestrator, route_task
 
 
 @click.group()
