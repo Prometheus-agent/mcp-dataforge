@@ -93,3 +93,8 @@ class TestCreateDefaultConfig:
         cfg = create_default_config()
         assert "dq" in cfg.agents
         assert "data_quality" in cfg.agents["dq"].capabilities
+
+    def test_default_has_schema_agent(self):
+        cfg = create_default_config()
+        assert "schema" in cfg.agents
+        assert "drift" in cfg.agents["schema"].capabilities
