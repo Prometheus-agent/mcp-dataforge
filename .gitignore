@@ -1,5 +1,7 @@
-__pycache__/
-*.pyc
+.DS_Store
 frontend/.next/
 frontend/node_modules/
 frontend/out/
+node_modules/
+*.pyc
+__pycache__/
