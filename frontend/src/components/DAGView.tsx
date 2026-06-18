@@ -63,12 +63,12 @@ export function DAGView({ plan }: { plan: PlanStep[] }) {
             <div className="flex flex-col items-center gap-1 px-2 py-1.5 min-w-[120px]">
               <span className="text-lg">{icon}</span>
               <span className="text-xs font-semibold capitalize">{agentName}</span>
-              <span className="text-[10px] text-slate-500">{step.tool || "execute"}</span>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400">{step.tool || "execute"}</span>
             </div>
           ),
         },
         style: {
-          background: "#fff",
+          background: "var(--node-bg, #fff)",
           border: `2px solid ${color}`,
           borderRadius: 12,
           padding: 4,
@@ -131,7 +131,7 @@ export function DAGView({ plan }: { plan: PlanStep[] }) {
       className="rounded-lg"
     >
       <Background color="#f1f5f9" gap={16} />
-      <Controls showInteractive={false} className="!rounded-lg !border-slate-200" />
+      <Controls showInteractive={false} className="!rounded-lg !border-slate-200 dark:!border-slate-700" />
     </ReactFlow>
   );
 }
