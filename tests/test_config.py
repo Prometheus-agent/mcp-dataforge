@@ -108,3 +108,8 @@ class TestCreateDefaultConfig:
         cfg = create_default_config()
         assert "observability" in cfg.agents
         assert "monitoring" in cfg.agents["observability"].capabilities
+
+    def test_default_has_orchestration_agent(self):
+        cfg = create_default_config()
+        assert "orchestration" in cfg.agents
+        assert "dag" in cfg.agents["orchestration"].capabilities
