@@ -204,9 +204,12 @@ agents:
     capabilities: ["orchestration", "dag", "scheduling", "backfill"]
 ```
 
----
+### Deploy to Production
 
-## Development
+See the full [Deployment Guide](docs/guides/deployment.md) for Docker Compose, Kubernetes, and SSE mode setup.
+
+```
+---
 
 ```bash
 # Clone and install
