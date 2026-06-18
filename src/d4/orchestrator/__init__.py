@@ -1,4 +1,5 @@
 from d4.orchestrator.server import (
+    Orchestrator,
     create_orchestrator,
     route_task,
     list_agents,
@@ -6,6 +7,7 @@ from d4.orchestrator.server import (
 )
 
 __all__ = [
+    "Orchestrator",
     "create_orchestrator",
     "route_task",
     "list_agents",

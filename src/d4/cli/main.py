@@ -7,7 +7,7 @@ import click
 from d4 import __version__
 from d4.config.loader import find_config, load_config, write_default_config
 from d4.registry.agent_registry import AgentRegistry
-from d4.orchestrator.server import create_orchestrator, route_task, list_agents
+from d4.orchestrator.server import create_orchestrator, route_task, list_agents, get_pipeline_status
 
 
 @click.group()
@@ -123,13 +123,25 @@ def agent_list():
 
 
 @cli.command()
+@click.option("--transport", default="stdio", type=click.Choice(["stdio", "sse"]))
+@click.option("--port", default=8080, help="Port for SSE transport")
+def mcp_server(transport, port):
+    """Run as MCP server for Claude Code integration."""
+    from d4.orchestrator.mcp_server import mcp
+    click.echo(f"Starting DataForge MCP server ({transport})...", err=True)
+    if transport == "sse":
+        click.echo(f"Listening on http://0.0.0.0:{port}", err=True)
+    mcp.run(transport=transport, port=port)
+
+
+@cli.command()
 def mcp():
     """Print MCP server config for Claude Code integration."""
     config = {
         "mcpServers": {
             "dataforge": {
                 "command": "dataforge",
-                "args": ["start"],
+                "args": ["mcp-server"],
                 "env": {},
             }
         }
