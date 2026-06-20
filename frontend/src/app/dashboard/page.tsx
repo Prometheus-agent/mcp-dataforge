@@ -112,7 +112,7 @@ export default function DashboardPage() {
               { label: "Errors", value: stats.errors, sub: `${stats.total ? Math.round(stats.errors/stats.total*100) : 0}% fail` },
             ].map(c => (
               <div key={c.label} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4">
-                <div className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{c.label}</div>
+                <div className="text-xs font-medium text-slate-500 dark:text-slate-400 tracking-wider">{c.label}</div>
                 <div className="text-3xl font-bold mt-0.5 dark:text-slate-100">{c.value}</div>
                 <div className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{c.sub}</div>
               </div>
@@ -120,12 +120,12 @@ export default function DashboardPage() {
           </div>
 
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-semibold dark:text-slate-100">Recent Pipelines</h2>
+            <h2 className="text-base font-semibold dark:text-slate-100">Recent pipelines</h2>
             <button onClick={() => setTab("pipelines")} className="text-xs text-blue-600 dark:text-blue-400 hover:underline">View all</button>
           </div>
           <div className="space-y-2 mb-10">
             {pipelines.length === 0
-              ? <EmptyState msg="No pipelines yet. Run a task from Claude Code!" />
+              ? <EmptyState msg="No pipelines yet. Run a task to get started." />
               : pipelines.slice(-5).reverse().map(p => <PipelineRowSmall key={p.id} p={p} onResults={showPipelineDetail} />)}
           </div>
 
@@ -138,7 +138,7 @@ export default function DashboardPage() {
         {/* ──── PIPELINES ──── */}
         {tab === "pipelines" && <>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-semibold dark:text-slate-100">All Pipelines</h2>
+            <h2 className="text-base font-semibold dark:text-slate-100">All pipelines</h2>
             <span className="text-sm text-slate-500 dark:text-slate-400">{pipelines.length} total</span>
           </div>
           <div className="space-y-2">
@@ -199,7 +199,7 @@ export default function DashboardPage() {
         {/* ──── AGENTS ──── */}
         {tab === "agents" && <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           <div className="lg:col-span-3">
-            <h2 className="text-base font-semibold mb-4 dark:text-slate-100">Specialist Agents</h2>
+            <h2 className="text-base font-semibold mb-4 dark:text-slate-100">Specialist agents</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {agents.map(a => (
                 <AgentCard key={a.name} agent={a} onClick={() => setSelectedAgent(selectedAgent?.name === a.name ? null : a)} selected={selectedAgent?.name === a.name} />

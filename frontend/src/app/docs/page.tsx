@@ -29,7 +29,7 @@ export default function DocsPage() {
         {/* Quick Start */}
         <section className="mb-16">
           <h2 className="text-2xl font-bold tracking-tight mb-6 text-slate-900 dark:text-white">
-            Quick Start
+            Quick start
           </h2>
 
           <div className="space-y-8">

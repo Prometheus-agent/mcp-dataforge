@@ -27,9 +27,9 @@ export default function Home() {
             DE agent framework
           </h1>
           <p className="text-lg sm:text-xl text-slate-500 dark:text-slate-400 max-w-xl leading-relaxed mb-10">
-            Turn natural language into data pipeline actions. Six specialist
-            agents collaborate to build, validate, and monitor your data
-            infrastructure.
+            Natural language for pipelines. Multi-agent execution
+            through MCP. 6 specialist agents collaborate to build,
+            validate, and monitor your data infrastructure.
           </p>
           <div className="flex flex-wrap items-center gap-4">
             <code className="inline-flex items-center px-5 py-3 rounded-xl bg-slate-900 dark:bg-slate-800 text-white font-mono text-sm font-semibold shadow-sm">
@@ -70,7 +70,7 @@ export default function Home() {
         {/* Agent Grid */}
         <section className="mb-20">
           <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400 dark:text-slate-500 mb-5">
-            Specialist Agents
+            Specialist agents
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-px bg-slate-200 dark:bg-slate-800 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800">
             {agents.map((a) => (
