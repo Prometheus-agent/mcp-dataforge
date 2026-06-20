@@ -4,9 +4,10 @@
 
 Turn natural language into data pipeline actions. Six specialist agents collaborate through the Model Context Protocol (MCP) to build, validate, and monitor your data infrastructure.
 
-[![Tests](https://img.shields.io/badge/tests-153%20passing-brightgreen)](#)
+[![Tests](https://img.shields.io/badge/tests-179%20passing-brightgreen)](#)
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue)](#)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue)](#)
+[![PyPI version](https://img.shields.io/pypi/v/mcp-dataforge)](https://pypi.org/project/mcp-dataforge/)
 
 ---
 
